@@ -4,6 +4,7 @@
 .pnp.js
 /.env
 /build
+dist/
 
 # その他
 .DS_Store
