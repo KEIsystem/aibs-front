@@ -8,6 +8,7 @@ import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import { useEffect } from 'react';
 import api from './api';
+import { sendPostProgressionData } from './api';
 
 
 

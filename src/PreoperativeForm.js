@@ -4,6 +4,7 @@ import ERPgRInputPanel from './components/ERPgRInputPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import api from './api';
+import { sendPreoperativeData } from './api';
 
 function PreoperativeForm() {
   // 基本情報
