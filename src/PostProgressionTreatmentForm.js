@@ -9,14 +9,14 @@ import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import { useEffect } from 'react';
 import api from './api';
 import { sendPostProgressionData } from './api';
-
+import React, { forwardRef, useImperativeHandle, useState } from 'react';
 
 
 const drugCategories = {
   luminal: ['TAM', 'ANA', 'LET', 'EXE', 'Ful', 'LH-RHa', 'Palbo', 'Abema', 'Ful+Capi', 'EXE+EVE', 'MPA'],
   her2: ['Tmab', 'Pmab', 'T-DXd', 'T-DM1', 'Lapatinib'],
   oralChemo: ['TS-1', 'Cape', 'UFT', 'CPA', 'MTX'],
-  targeted: ['Olaparib', 'Talazoparib', 'Atezolizumab', 'Pembrolizumab', 'Bev','SG'],
+  targeted: ['Olaparib', 'Talazoparib', 'Atezolizumab', 'Pembrolizumab', 'Bev','SG', 'Dmab', 'Dato-Dxd'],
   ivChemo: ['Doxorubicin', 'Epirubicin', 'DTx', 'PTx', 'nab-PTX', 'CBDCA', 'Eribulin', 'GEM', 'VNR'],
 };
 

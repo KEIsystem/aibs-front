@@ -161,28 +161,47 @@ const fetchPatientData = async (id) => {
     };
   
     const payload = {
-      ER: interpretedMarkers.ER,
-      PgR: interpretedMarkers.PgR,
-      HER2: interpretedMarkers.HER2,
-      tumor_size_mm: parseFloat(tumorSize || '0'),
-      clinical_N: lymphEvaluation,
-      age: parseInt(age || '0', 10),
-      frail: otherInfo.frailty,
-      radiation_history: pastMedicalHistory.includes("放射線"),
-      gbrca_positive: gbrca === "陽性",
-      gender,
-      family_history: {
-        breast: familyHistory.includes("乳がん"),
-        ovary: familyHistory.includes("卵巣がん"),
-        peritoneum: familyHistory.includes("腹膜がん"),
-        pancreas: familyHistory.includes("膵臓がん"),
-        others: familyHistory.includes("その他")
+      basic_info: {
+        age: parseInt(age || '0', 10),
+        gender,
+        is_premenopausal: isPremenopausal,
+        past_treatment: pastMedicalHistory,
+        medications,
+        allergies,
+        family_history: {
+          breast: familyHistory.includes("乳がん"),
+          ovary: familyHistory.includes("卵巣がん"),
+          peritoneum: familyHistory.includes("腹膜がん"),
+          pancreas: familyHistory.includes("膵臓がん"),
+          others: familyHistory.includes("その他")
+        },
+        other_info: {
+          frailty: otherInfo.frailty,
+          notes: otherInfo.notes,
+          gBRCA: gbrca
+        }
       },
-      multifocal: Object.values(regions).filter(v => v).length > 1,
+      primary_tumor_info: {
+        side,
+        regions,
+        tumor_size: parseFloat(tumorSize || '0'),
+        lymph_evaluation: lymphEvaluation,
+        histology,
+        is_invasive: isInvasive,
+        grade,
+        markers: {
+          ER: interpretedMarkers.ER,
+          PgR: interpretedMarkers.PgR,
+          HER2: interpretedMarkers.HER2,
+          Ki67: interpretedMarkers.Ki67
+        }
+      }
     };
+
       console.log("🧪 markers.HER2:", markers.HER2);  // ★追加
       console.log("🧪 interpretedMarkers:", interpretedMarkers);  // ★追加
       console.log("🧪 payload:", payload);  // ★追加
+      console.log("🧪 Final payload:", payload);
      
     try {
       const json = await sendPreoperativeData(payload, isUpdateMode);

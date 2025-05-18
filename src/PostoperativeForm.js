@@ -105,6 +105,55 @@
       setFrailty(data.frailty || false);
     };
 
+    const handleResetForm = () => {
+          setRecommendation(null);
+          setIsUpdateMode(false);
+          setDataLoaded(false);
+
+          // 基本情報・既往・内服・家族歴
+          setBirthDate('');
+          setAge('');
+          setGender('');
+          setIsPremenopausal(false);
+          setPastMedicalHistory('');
+          setMedications('');
+          setFamilyHistory([]);
+          setGbrca('');
+
+          // 術前情報（CPS+EG用）
+          setPreTumorSize('');
+          setPreLymphEvaluation('');
+
+          // PrimaryTumorInfoPanel 情報
+          setReceivedNAC(false);
+          setNacRegimen('');
+          setNacEndDate('');
+          setSurgeryType('');
+          setAxillarySurgery('');
+          setSurgeryDate('');
+          setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+          setPrimaryPdL1([]);
+          setTumorSize('');
+          setInvasionChestWall(false);
+          setInvasionSkin(false);
+          setInflammatory(false);
+          setIsYpTis(false);
+          setPositiveNodes('');
+          setMarginStatus('');
+          setGrade('');
+          setUseAllred(false);
+          setErPercent('');
+          setPgrPercent('');
+          setErPS('');
+          setErIS('');
+          setPgrPS('');
+          setPgrIS('');
+
+          // その他
+          setFrailty(false);
+        };
+
+
     const handleSubmit = async (e) => {
       e.preventDefault();
       console.log(" 送信ボタンがクリックされました");
@@ -158,53 +207,8 @@
         interventions: [],
         adjuvant_therapy: null
       };
-    const handleResetForm = () => {
-      setRecommendation(null);
-      setIsUpdateMode(false);
-      setDataLoaded(false);
 
-      // 基本情報・既往・内服・家族歴
-      setBirthDate('');
-      setAge('');
-      setGender('');
-      setIsPremenopausal(false);
-      setPastMedicalHistory('');
-      setMedications('');
-      setFamilyHistory([]);
-      setGbrca('');
-
-      // 術前情報（CPS+EG用）
-      setPreTumorSize('');
-      setPreLymphEvaluation('');
-
-      // PrimaryTumorInfoPanel 情報
-      setReceivedNAC(false);
-      setNacRegimen('');
-      setNacEndDate('');
-      setSurgeryType('');
-      setAxillarySurgery('');
-      setSurgeryDate('');
-      setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
-      setPrimaryPdL1([]);
-      setTumorSize('');
-      setInvasionChestWall(false);
-      setInvasionSkin(false);
-      setInflammatory(false);
-      setIsYpTis(false);
-      setPositiveNodes('');
-      setMarginStatus('');
-      setGrade('');
-      setUseAllred(false);
-      setErPercent('');
-      setPgrPercent('');
-      setErPS('');
-      setErIS('');
-      setPgrPS('');
-      setPgrIS('');
-
-      // その他
-      setFrailty(false);
-    };
+    
       console.log(" payload:", payload);
     
       console.log(" 送信前 payload 内容:", JSON.stringify(payload, null, 2));
