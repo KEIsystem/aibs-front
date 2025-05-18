@@ -169,12 +169,12 @@ const fetchPatientData = async (id) => {
         medications,
         allergies,
         family_history: {
-          breast: familyHistory.includes("乳がん"),
-          ovary: familyHistory.includes("卵巣がん"),
-          peritoneum: familyHistory.includes("腹膜がん"),
-          pancreas: familyHistory.includes("膵臓がん"),
-          others: familyHistory.includes("その他")
-        },
+          breast: familyHistory.some(f => f.disease === "乳がん"),
+          ovary: familyHistory.some(f => f.disease === "卵巣がん"),
+          peritoneum: familyHistory.some(f => f.disease === "腹膜がん"),
+          pancreas: familyHistory.some(f => f.disease === "膵臓がん"),
+          others: familyHistory.some(f => f.disease === "その他")
+                },
         other_info: {
           frailty: otherInfo.frailty,
           notes: otherInfo.notes,

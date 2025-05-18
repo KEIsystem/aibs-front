@@ -172,10 +172,12 @@
           past_treatment: pastMedicalHistory,
           medications,
           family_history: {
-            breast: familyHistory.includes("乳がん"),
-            ovary: familyHistory.includes("卵巣がん"),
-            pancreas: familyHistory.includes("膵がん"),
-          },
+            breast: familyHistory.some(f => f.disease === "乳がん"),
+            ovary: familyHistory.some(f => f.disease === "卵巣がん"),
+            peritoneum: familyHistory.some(f => f.disease === "腹膜がん"),
+            pancreas: familyHistory.some(f => f.disease === "膵臓がん"),
+            others: familyHistory.some(f => f.disease === "その他")
+                  },
           other_info: {
             gBRCA: gbrca,
             frailty: frailty,
