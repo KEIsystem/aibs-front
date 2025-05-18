@@ -180,7 +180,9 @@ const fetchPatientData = async (id) => {
       },
       multifocal: Object.values(regions).filter(v => v).length > 1,
     };
-  
+      console.log("🧪 markers.HER2:", markers.HER2);  // ★追加
+      console.log("🧪 interpretedMarkers:", interpretedMarkers);  // ★追加
+      console.log("🧪 payload:", payload);  // ★追加
      
     try {
       const json = await sendPreoperativeData(payload, isUpdateMode);
