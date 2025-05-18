@@ -1,26 +1,29 @@
-// ✅ frontend/src/components/PatientIdSearchPanel.js
-import React, { useState } from 'react';
+// aibs-front/src/components/PatientIdSearchPanel.js
+import React, { useState, useEffect } from 'react';
+import { fetchPatientData } from '../api';
 
-function PatientIdSearchPanel({ patientId, setPatientId, onSearch }) {
+function PatientIdSearchPanel({ patientId, setPatientId, onSearch, onReset }) {
   const [status, setStatus] = useState(''); // '', 'success', 'not_found'
 
   const handleSearchClick = async () => {
     if (!patientId) return;
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/patient/${patientId}/`);
-      if (!res.ok) {
-        setStatus('not_found');
-        return;
-      }
-
-      const data = await res.json();
+      const data = await fetchPatientData(patientId);
       await onSearch(data);
       setStatus('success');
-    } catch (err) {
+    } catch {
       setStatus('not_found');
     }
   };
+
+  useEffect(() => {
+    //  ID変更時にリセットを呼び出す
+    if (onReset) {
+      onReset();
+    }
+    setStatus('');
+  }, [patientId]);
 
   return (
     <div className="flex items-center space-x-3 mb-4">
@@ -28,10 +31,7 @@ function PatientIdSearchPanel({ patientId, setPatientId, onSearch }) {
       <input
         type="text"
         value={patientId}
-        onChange={(e) => {
-          setPatientId(e.target.value);
-          setStatus('');
-        }}
+        onChange={(e) => setPatientId(e.target.value)}
         className="border px-2 py-1"
       />
       <button

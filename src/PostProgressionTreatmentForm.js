@@ -1,4 +1,4 @@
-// ✅ PostProgressionTreatmentForm.js 完全統合版 with 原発治療パネル
+// PostProgressionTreatmentForm.js 完全統合版 with 原発治療パネル
 import React, { useState, useRef } from 'react';
 import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
 import AdjuvantTreatmentPanel from './AdjuvantTreatmentPanel';
@@ -6,6 +6,8 @@ import BasicInfoPanel from './components/BasicInfoPanel';
 import ERPgRInputPanel from './components/ERPgRInputPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
+import { useEffect } from 'react';
+import api from './api';
 
 
 
@@ -123,10 +125,121 @@ function PostProgressionTreatmentForm() {
 
   const [isUpdateMode, setIsUpdateMode] = useState(false);
 
+    useEffect(() => {
+    if (isUpdateMode && dataLoaded) {
+      console.log(" useEffectによる初期化処理");
+      setResult(null);  // 推奨治療の結果をリセット
+    }
+  }, [isUpdateMode, dataLoaded]);
+
+  const resetForm = () => {
+    setAge('');
+    setBirthDate('');
+    setGender('');
+    setIsPremenopausal(false);
+    setPastMedicalHistory('');
+    setMedications('');
+    setAllergies('');
+    setGbrca('未検査');
+    setFamilyHistory([]);
+
+    setPreTumorSize('');
+    setPreLymphEvaluation('');
+    setFrailty(false);
+
+    setReceivedNAC(false);
+    setNacRegimen('');
+    setNacEndDate('');
+    setSurgeryType('');
+    setAxillarySurgery('');
+    setSurgeryDate('');
+    setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+    setPrimaryPdL1([]);
+    setTumorSize('');
+    setInvasionChestWall(false);
+    setInvasionSkin(false);
+    setInflammatory(false);
+    setIsYpTis(false);
+    setPositiveNodes('');
+    setMarginStatus('');
+    setGrade('');
+    setAnthraResponse('未治療');
+    setTaxaneResponse('未治療');
+
+    setUseAllred(false);
+    setErPercent('');
+    setPgrPercent('');
+    setErPS('');
+    setErIS('');
+    setPgrPS('');
+    setPgrIS('');
+
+    setRecurrenceMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+    setRecurrenceBiopsy(false);
+    setRecurrenceBiopsySite('');
+    setRecurrenceBiopsyDate('');
+    setMetastasisSites({
+      local: false, local_ln: false, distant_ln: false,
+      lung: false, liver: false, bone: false, brain: false, other: false
+    });
+    setOtherSiteDetail('');
+
+    setRecurrenceDate('');
+    setLocalTherapy({
+      surgery: false, surgery_date: '', surgery_note: '',
+      radiation: false, radiation_date: '', radiation_note: ''
+    });
+
+    setTreatments([{
+      treatmentLineId: 1,
+      startDate: '',
+      endDate: '',
+      drugs: [],
+      outcome: '',
+      metastasisSites: {
+        local: false, local_ln: false, distant_ln: false,
+        lung: false, liver: false, bone: false, brain: false, other: false
+      },
+      otherSiteDetail: ''
+    }]);
+
+    setInterventions([{
+      biopsy: false,
+      biopsy_site: '',
+      biopsy_date: '',
+      markers: { ER: '', PgR: '', HER2: '', Ki67: '' },
+      useAllred: false,
+      erPercent: '',
+      pgrPercent: '',
+      erPS: '',
+      erIS: '',
+      pgrPS: '',
+      pgrIS: '',
+      surgery: false,
+      surgery_date: '',
+      surgery_note: '',
+      radiation: false,
+      radiation_date: '',
+      radiation_note: ''
+    }]);
+
+    setIsDeNovo(false);
+    setVisceralCrisis(false);
+    setIsDeceased(false);
+    setDateOfDeath('');
+    setCauseOfDeath('');
+    setResult(null);
+    setCopyPrimaryToRecurrence(false);
+  };
+
+
   const handlePatientDataLoad = (data) => {
     console.log("📥 検索結果（patient data）:", data);
+    
+    resetForm();
     setIsUpdateMode(true);
-  
+    setDataLoaded(true);
+
     setAge(data.age || '');
     setBirthDate(data.birth_date || '');
     setGender(data.gender || '');
@@ -226,6 +339,8 @@ function PostProgressionTreatmentForm() {
     setDateOfDeath(data.date_of_death || '');
     setCauseOfDeath(data.cause_of_death || '');
   };
+
+
 
   const handleOutcomeChange = (index, value) => {
     const updated = [...treatments];
@@ -378,18 +493,10 @@ function PostProgressionTreatmentForm() {
     console.log("📤 送信内容（postPD）:", formData);
   
     try {
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-  
-      const result = await response.json();
+      const result = await sendPostProgressionData(formData);
       setResult(result);
-    } catch (err) {
-      console.error('送信エラー:', err);
+    } catch (error) {
+      console.error("送信エラー:", error);
     }
   };
   

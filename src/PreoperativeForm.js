@@ -3,6 +3,7 @@ import BasicInfoPanel from './components/BasicInfoPanel';
 import ERPgRInputPanel from './components/ERPgRInputPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
+import api from './api';
 
 function PreoperativeForm() {
   // 基本情報
@@ -40,10 +41,12 @@ function PreoperativeForm() {
   const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   const checkIfPatientExists = async (id) => {
-    const url = `http://localhost:8000/api/patient/${id}/`;
-    console.log("🔍 存在確認URL:", url);  // ✅ これを追加
-    const res = await fetch(url);
-    return res.ok;
+    try {
+      const res = await api.get(`/api/patient/${id}/`);
+      return res.status === 200;
+    } catch {
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -121,7 +124,7 @@ function PreoperativeForm() {
 
 const fetchPatientData = async (id) => {
   try {
-    const res = await fetch(`http://localhost:8000/api/patient/${id}/`);
+    const res = await api.get(`/api/patient/${id}/`);
     if (!res.ok) {
       const text = await res.text();
       console.error("非JSONレスポンス:", text);
@@ -177,18 +180,9 @@ const fetchPatientData = async (id) => {
       multifocal: Object.values(regions).filter(v => v).length > 1,
     };
   
-    const endpoint = `http://localhost:8000/api/patient/recommendation/preoperative/`;
-    const method = 'POST';
-  
+     
     try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-  
-      const json = await res.json();
-  
+      const json = await sendPreoperativeData(payload, isUpdateMode);
       if (json.recommendation) {
         setRecommendation(json.recommendation);
       } else if (json.error) {
@@ -198,7 +192,6 @@ const fetchPatientData = async (id) => {
       alert("通信エラー：" + error.message);
     }
   };
-  
 
   return (
     <>
@@ -350,12 +343,7 @@ const fetchPatientData = async (id) => {
         </div>
       )}
 
-      {/* JSON形式での推奨結果の確認用 */}
-      {recommendation && (
-        <pre className="bg-gray-100 p-2 mt-2 rounded text-sm text-gray-800">
-          {JSON.stringify(recommendation, null, 2)}
-        </pre>
-      )}
+      
     </form>
   </>
 );

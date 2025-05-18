@@ -4,7 +4,7 @@
   import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
   import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
   import PatientIdSearchPanel from './components/PatientIdSearchPanel';
-
+  import api from './api';
 
 
   function PostoperativeForm() {
@@ -106,7 +106,7 @@
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      console.log("🟢 送信ボタンがクリックされました");
+      console.log(" 送信ボタンがクリックされました");
     
       const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
       const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
@@ -157,48 +157,76 @@
         interventions: [],
         adjuvant_therapy: null
       };
-    
-      console.log("📤 payload:", payload);
-    
-      const endpoint = 'http://localhost:8000/api/patient/recommendation/postoperative/';
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+    const handleResetForm = () => {
+      setRecommendation(null);
+      setIsUpdateMode(false);
+      setDataLoaded(false);
 
-      console.log("✅ 送信前 payload 内容:", JSON.stringify(payload, null, 2));
+      // 基本情報・既往・内服・家族歴
+      setBirthDate('');
+      setAge('');
+      setGender('');
+      setIsPremenopausal(false);
+      setPastMedicalHistory('');
+      setMedications('');
+      setFamilyHistory([]);
+      setGbrca('');
+
+      // 術前情報（CPS+EG用）
+      setPreTumorSize('');
+      setPreLymphEvaluation('');
+
+      // PrimaryTumorInfoPanel 情報
+      setReceivedNAC(false);
+      setNacRegimen('');
+      setNacEndDate('');
+      setSurgeryType('');
+      setAxillarySurgery('');
+      setSurgeryDate('');
+      setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+      setPrimaryPdL1([]);
+      setTumorSize('');
+      setInvasionChestWall(false);
+      setInvasionSkin(false);
+      setInflammatory(false);
+      setIsYpTis(false);
+      setPositiveNodes('');
+      setMarginStatus('');
+      setGrade('');
+      setUseAllred(false);
+      setErPercent('');
+      setPgrPercent('');
+      setErPS('');
+      setErIS('');
+      setPgrPS('');
+      setPgrIS('');
+
+      // その他
+      setFrailty(false);
+    };
+      console.log(" payload:", payload);
+    
+      console.log(" 送信前 payload 内容:", JSON.stringify(payload, null, 2));
 
 
       try {
-        const res = await fetch("http://localhost:8000/api/patient/recommendation/postoperative/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-    
-        const json = await res.json();
-        console.log("📥 サーバー応答:", json);
-        console.log("🖥 表示する recommendation:", recommendation);
-    
+        const json = await sendPostoperativeData(payload, isUpdateMode, patientId);
+
+        console.log("サーバー応答:", json);
+
         if (
           json.recommendation &&
           (json.recommendation["IV Chemo"] || json.recommendation["RTx"] || json.recommendation["補助療法"])
         ) {
-          setRecommendation(json.recommendation);  // ✅ これで recommendation がセットされる
-          console.log("🖥 表示する recommendation:", json.recommendation);
+          setRecommendation(json.recommendation);
         } else if (json.error) {
           alert("エラー：" + json.error);
         }
-        
-    
+
       } catch (error) {
         alert("通信エラー：" + error.message);
       }
     };
-    
 
     return (  
       
@@ -208,7 +236,8 @@
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onPatientLoaded={handlePatientDataLoad}
+          onSearch={handlePatientDataLoad}
+          onReset={handleResetForm}
         />
           
 
