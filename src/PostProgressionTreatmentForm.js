@@ -1,15 +1,19 @@
 // PostProgressionTreatmentForm.js 完全統合版 with 原発治療パネル
-import React, { useState, useRef } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle
+} from 'react';
 import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
 import AdjuvantTreatmentPanel from './AdjuvantTreatmentPanel';
 import BasicInfoPanel from './components/BasicInfoPanel';
 import ERPgRInputPanel from './components/ERPgRInputPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
-import { useEffect } from 'react';
 import api from './api';
 import { sendPostProgressionData } from './api';
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
 
 
 const drugCategories = {
@@ -558,7 +562,12 @@ function PostProgressionTreatmentForm() {
             pgrPS={pgrPS} setPgrPS={setPgrPS}
             pgrIS={pgrIS} setPgrIS={setPgrIS}
           />
-          <AdjuvantTreatmentPanel />
+          <AdjuvantTreatmentPanel
+            ref={adjuvantRef}
+            receivedNAC={receivedNAC}
+            nacRegimen={nacRegimen}
+            surgeryType={surgeryType}
+          />
         </>
       )}
 
