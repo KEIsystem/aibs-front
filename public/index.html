@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#fef9fb" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="AIBSproject: AIによる乳がん治療提案支援ツール"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
@@ -24,7 +24,18 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+
+    <!-- Open Graph / Twitter Card -->
+    <meta property="og:title" content="AIBSproject" />
+    <meta property="og:description" content="乳腺外科のためのAI治療提案支援ツール" />
+    <meta property="og:image" content="https://aibs-front.onrender.com/aibs-og-image.png" />
+    <meta property="og:url" content="https://aibs-front.onrender.com" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AIBSproject" />
+    <meta name="twitter:description" content="乳腺外科のためのAI治療提案支援ツール" />
+    <meta name="twitter:image" content="https://aibs-front.onrender.com/aibs-og-image.png" />
+
+    <title>AIBSproject</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -39,5 +50,10 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+
+    <footer style="text-align:center; margin-top: 2rem; color: #999; font-size: 0.9rem;">
+      © 2025 Kei Ishii. All rights reserved.<br>
+      Powered by Department of Breast Surgery, Kyoto University Hospital.
+    </footer>
   </body>
 </html>
