@@ -4,14 +4,20 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const allowedPath = '/secret2025keikuhpbrca';
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+if (window.location.pathname.startsWith(allowedPath)) {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  document.body.innerHTML = `
+    <div style="text-align: center; margin-top: 5rem; font-family: sans-serif;">
+      <h2>このページは非公開です</h2>
+      <p>正しいURLをご確認ください。</p>
+    </div>
+  `;
+}
