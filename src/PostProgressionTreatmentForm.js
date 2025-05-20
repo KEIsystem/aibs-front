@@ -477,7 +477,8 @@ function PostProgressionTreatmentForm() {
           ER: primaryMarkers.ER,
           PgR: primaryMarkers.PgR,
           HER2: primaryMarkers.HER2,
-          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10)
+          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
+          sp142, cps, msi, mmr
         },
         PD_L1: primaryPdL1,
         tumor_size: parseFloat(tumorSize || '0'),
@@ -511,7 +512,7 @@ function PostProgressionTreatmentForm() {
       cause_of_death: isDeceased ? causeOfDeath : null,
     };
   
-    console.log("📤 送信内容（postPD）:", formData);
+    console.log("📤 送信内容（formData）:", JSON.stringify(formData, null, 2));
   
     try {
       const result = await sendPostProgressionData(formData);
