@@ -6,6 +6,7 @@ import React, {
   forwardRef,
   useImperativeHandle
 } from 'react';
+import { fetchUnifiedPatientData } from './api';
 import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
 import AdjuvantTreatmentPanel from './AdjuvantTreatmentPanel';
 import BasicInfoPanel from './components/BasicInfoPanel';
@@ -64,7 +65,7 @@ function PostProgressionTreatmentForm() {
   const [axillarySurgery, setAxillarySurgery] = useState('');
   const [surgeryDate, setSurgeryDate] = useState('');
   const [primaryMarkers, setPrimaryMarkers] = useState({ ER: '', PgR: '', HER2: '', Ki67: '' });
-  const [primaryPdL1, setPrimaryPdL1] = useState([]);
+  const [primaryPdL1, setPrimaryPdL1] = useState({sp142: 'none', cps: 'none', msi: 'none', mmr: 'none'});
   const [tumorSize, setTumorSize] = useState('');
   const [invasionChestWall, setInvasionChestWall] = useState(false);
   const [invasionSkin, setInvasionSkin] = useState(false);
@@ -92,6 +93,10 @@ function PostProgressionTreatmentForm() {
   const [erIS, setErIS] = useState('');
   const [pgrPS, setPgrPS] = useState('');
   const [pgrIS, setPgrIS] = useState('');
+  const [sp142, setSp142] = useState('none');
+  const [cps, setCps] = useState('none');
+  const [msi, setMsi] = useState('none');
+  const [mmr, setMmr] = useState('none');
 
   const [recurrenceDate, setRecurrenceDate] = useState('');
   const [localTherapy, setLocalTherapy] = useState({
@@ -159,7 +164,7 @@ function PostProgressionTreatmentForm() {
     setAxillarySurgery('');
     setSurgeryDate('');
     setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
-    setPrimaryPdL1([]);
+    setPrimaryPdL1({ sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' });
     setTumorSize('');
     setInvasionChestWall(false);
     setInvasionSkin(false);
@@ -208,26 +213,7 @@ function PostProgressionTreatmentForm() {
       otherSiteDetail: ''
     }]);
 
-    setInterventions([{
-      biopsy: false,
-      biopsy_site: '',
-      biopsy_date: '',
-      markers: { ER: '', PgR: '', HER2: '', Ki67: '' },
-      useAllred: false,
-      erPercent: '',
-      pgrPercent: '',
-      erPS: '',
-      erIS: '',
-      pgrPS: '',
-      pgrIS: '',
-      surgery: false,
-      surgery_date: '',
-      surgery_note: '',
-      radiation: false,
-      radiation_date: '',
-      radiation_note: ''
-    }]);
-
+    
     setIsDeNovo(false);
     setVisceralCrisis(false);
     setIsDeceased(false);
@@ -245,7 +231,6 @@ function PostProgressionTreatmentForm() {
     setIsUpdateMode(true);
     setDataLoaded(true);
 
-    setAge(data.age || '');
     setBirthDate(data.birth_date || '');
     setGender(data.gender || '');
     setIsPremenopausal(data.is_premenopausal || false);
@@ -295,7 +280,18 @@ function PostProgressionTreatmentForm() {
   
     setFrailty(data.frailty || false);
 
-    setRecurrenceBiopsy(data.recurrence?.biopsy || false);
+    const recurrence = data.recurrence || {};
+    setRecurrenceBiopsy(recurrence.biopsy || false);
+    setRecurrenceBiopsySite(recurrence.biopsy_site || '');
+    setRecurrenceBiopsyDate(recurrence.biopsy_date || '');
+    setMetastasisSites(recurrence.sites || {});
+    setOtherSiteDetail(recurrence.other_site_detail || '');
+    setRecurrenceMarkers({
+      ER: recurrence.markers?.ER || '',
+      PgR: recurrence.markers?.PgR || '',
+      HER2: recurrence.markers?.HER2 || '',
+      Ki67: recurrence.markers?.Ki67?.toString() || ''
+    });
     setRecurrenceBiopsySite(data.recurrence?.biopsy_site || '');
     setRecurrenceBiopsyDate(data.recurrence?.biopsy_date || '');
     setMetastasisSites(data.recurrence?.sites || {});
@@ -383,13 +379,27 @@ function PostProgressionTreatmentForm() {
   const handleAddTreatmentLine = () => {
     const nextTreatmentLineId = treatments.length + 1;
     setTreatments([...treatments,
-      { treatmentLineId: nextTreatmentLineId, startDate: '', endDate: '', drugs: [], outcome: '' }
+      {
+        treatmentLineId: nextTreatmentLineId,
+        startDate: '',
+        endDate: '',
+        drugs: [],
+        outcome: '',
+        metastasisSites: {
+          local: false, local_ln: false, distant_ln: false,
+          lung: false, liver: false, bone: false, brain: false, other: false
+        },
+        otherSiteDetail: ''
+      }
     ]);
     setInterventions([...interventions, {
       biopsy: false,
       biopsy_site: '',
       biopsy_date: '',
-      markers: { ER: '', PgR: '', HER2: '', Ki67: '' },
+      markers: { ER: '', PgR: '', HER2: '', Ki67: '', sp142: 'none',
+      cps: 'none',
+      msi: 'none',
+      mmr: 'none' },
       useAllred: false,
       erPercent: '',
       pgrPercent: '',
@@ -415,6 +425,10 @@ function PostProgressionTreatmentForm() {
     setErIS(erIS);
     setPgrPS(pgrPS);
     setPgrIS(pgrIS);
+    setSp142(primaryPdL1.sp142 || 'none');
+    setCps(primaryPdL1.cps || 'none');
+    setMsi(primaryPdL1.msi || 'none');
+    setMmr(primaryPdL1.mmr || 'none');
   };
  
 
@@ -584,34 +598,22 @@ function PostProgressionTreatmentForm() {
         value={recurrenceDate}
         onChange={(e) => setRecurrenceDate(e.target.value)}
       />
-      <ERPgRInputPanel
-        useAllred={useAllred} setUseAllred={setUseAllred}
-        erPercent={erPercent} setErPercent={setErPercent}
-        pgrPercent={pgrPercent} setPgrPercent={setPgrPercent}
-        erPS={erPS} setErPS={setErPS}
-        erIS={erIS} setErIS={setErIS}
-        pgrPS={pgrPS} setPgrPS={setPgrPS}
-        pgrIS={pgrIS} setPgrIS={setPgrIS}
-      />
-      <label>HER2：</label><select value={recurrenceMarkers.HER2} onChange={e => setRecurrenceMarkers({ ...recurrenceMarkers, HER2: e.target.value })}><option value="">選択</option><option value="0">0</option><option value="1+">1+</option><option value="2+ (ISH陰性)">2+ (ISH陰性)</option><option value="2+ (ISH陽性)">2+ (ISH陽性)</option><option value="3+">3+</option></select>
-      <label>Ki-67：</label><input type="number" value={recurrenceMarkers.Ki67} onChange={e => setRecurrenceMarkers({ ...recurrenceMarkers, Ki67: e.target.value })} />
-      <button type="button" onClick={handleCopyPrimaryMarkers}>原発をコピー</button>
 
       <h4>再発部位：</h4>
-{Object.keys(metastasisSites).map(site => (
-  <label key={site} className="mr-4">
-    <input
-      type="checkbox"
-      checked={metastasisSites[site]}
-      onChange={e => {
-        setMetastasisSites({ ...metastasisSites, [site]: e.target.checked });
-        if (site === "other" && !e.target.checked) {
-          setOtherSiteDetail(''); // チェック解除時に内容をクリア
-        }
-      }}
-    /> {site}
-  </label>
-))}
+        {Object.keys(metastasisSites).map(site => (
+          <label key={site} className="mr-4">
+            <input
+              type="checkbox"
+              checked={metastasisSites[site]}
+              onChange={e => {
+                setMetastasisSites({ ...metastasisSites, [site]: e.target.checked });
+                if (site === "other" && !e.target.checked) {
+                  setOtherSiteDetail(''); // チェック解除時に内容をクリア
+                }
+              }}
+            /> {site}
+          </label>
+        ))}
 
 {metastasisSites.other && (
   <div className="mt-2">
@@ -627,6 +629,65 @@ function PostProgressionTreatmentForm() {
       <h4>再発時生検：</h4>
       <label><input type="checkbox" checked={recurrenceBiopsy} onChange={e => setRecurrenceBiopsy(e.target.checked)} /> 生検あり</label>
       {recurrenceBiopsy && (<><label>部位：</label><input type="text" value={recurrenceBiopsySite} onChange={e => setRecurrenceBiopsySite(e.target.value)} /></>)}
+
+      <h4>再発時生検マーカー：</h4>
+      <ERPgRInputPanel
+        useAllred={useAllred} setUseAllred={setUseAllred}
+        erPercent={erPercent} setErPercent={setErPercent}
+        pgrPercent={pgrPercent} setPgrPercent={setPgrPercent}
+        erPS={erPS} setErPS={setErPS}
+        erIS={erIS} setErIS={setErIS}
+        pgrPS={pgrPS} setPgrPS={setPgrPS}
+        pgrIS={pgrIS} setPgrIS={setPgrIS}
+      />
+      <label>HER2：</label><select value={recurrenceMarkers.HER2} onChange={e => setRecurrenceMarkers({ ...recurrenceMarkers, HER2: e.target.value })}><option value="">選択</option><option value="0">0</option><option value="1+">1+</option><option value="2+ (ISH陰性)">2+ (ISH陰性)</option><option value="2+ (ISH陽性)">2+ (ISH陽性)</option><option value="3+">3+</option></select>
+      <label>Ki-67：</label><input type="number" value={recurrenceMarkers.Ki67} onChange={e => setRecurrenceMarkers({ ...recurrenceMarkers, Ki67: e.target.value })} />
+      <button type="button" onClick={handleCopyPrimaryMarkers}>原発をコピー</button>
+
+      <fieldset className="border p-3 rounded">
+        <legend className="font-semibold">PD-L1・MSI・MMR検査結果</legend>
+
+        <div className="mb-4">
+          <label className="font-semibold block mb-1">PD-L1（SP142）:</label>
+          <div>
+            <label><input type="radio" name="sp142" value="none" checked={sp142 === 'none'} onChange={() => setSp142('none')} /> 検査なし</label><br />
+            <label><input type="radio" name="sp142" value="IC0" checked={sp142 === 'IC0'} onChange={() => setSp142('IC0')} /> IC0（&lt;1%）</label><br />
+            <label><input type="radio" name="sp142" value="IC1" checked={sp142 === 'IC1'} onChange={() => setSp142('IC1')} /> IC1（1〜&lt;5%）</label><br />
+            <label><input type="radio" name="sp142" value="IC2" checked={sp142 === 'IC2'} onChange={() => setSp142('IC2')} /> IC2（5〜&lt;10%）</label><br />
+            <label><input type="radio" name="sp142" value="IC3" checked={sp142 === 'IC3'} onChange={() => setSp142('IC3')} /> IC3（≧10%）</label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="font-semibold block mb-1">PD-L1（22C3）:</label>
+          <div>
+            <label><input type="radio" name="cps" value="none" checked={cps === 'none'} onChange={() => setCps('none')} /> 検査なし</label><br />
+            <label><input type="radio" name="cps" value="0" checked={cps === '0'} onChange={() => setCps('0')} /> CPS &lt; 1</label><br />
+            <label><input type="radio" name="cps" value="1to9" checked={cps === '1to9'} onChange={() => setCps('1to9')} /> CPS 1〜9</label><br />
+            <label><input type="radio" name="cps" value="10" checked={cps === '10'} onChange={() => setCps('10')} /> CPS ≥ 10</label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="font-semibold block mb-1">MSI:</label>
+          <div>
+            <label><input type="radio" name="msi" value="none" checked={msi === 'none'} onChange={() => setMsi('none')} /> 検査なし</label><br />
+            <label><input type="radio" name="msi" value="high" checked={msi === 'high'} onChange={() => setMsi('high')} /> MSI-High</label><br />
+            <label><input type="radio" name="msi" value="low" checked={msi === 'low'} onChange={() => setMsi('low')} /> MSI-Low / MSS</label>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="font-semibold block mb-1">MMR（Mismatch Repair）:</label>
+          <div>
+            <label><input type="radio" name="mmr" value="none" checked={mmr === 'none'} onChange={() => setMmr('none')} /> 検査なし</label><br />
+            <label><input type="radio" name="mmr" value="dmmr" checked={mmr === 'dmmr'} onChange={() => setMmr('dmmr')} /> dMMR（修復機構欠損）</label><br />
+            <label><input type="radio" name="mmr" value="pmmr" checked={mmr === 'pmmr'} onChange={() => setMmr('pmmr')} /> pMMR（保全あり）</label>
+          </div>
+        </div>
+      </fieldset>
+
+
 
       <h4>局所療法（1次治療前）</h4>
       <label><input type="checkbox" checked={localTherapy.surgery} onChange={e => setLocalTherapy({ ...localTherapy, surgery: e.target.checked })} /> 手術療法</label>
@@ -906,16 +967,100 @@ function PostProgressionTreatmentForm() {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+
+        {/* SP142 */}
+        <div>
+          <label>PD-L1（SP142）:</label>
+          <select
+            value={interventions[index].markers?.sp142 || 'none'}
+            onChange={e => {
+              const updated = [...interventions];
+              updated[index].markers.sp142 = e.target.value;
+              setInterventions(updated);
+            }}
+          >
+            <option value="none">検査なし</option>
+            <option value="IC0">IC0（&lt;1%）</option>
+            <option value="IC1">IC1（1-5%）</option>
+            <option value="IC2">IC2（5-10%）</option>
+            <option value="IC3">IC3（&gt;10%）</option>
+          </select>
+        </div>
+
+        {/* CPS */}
+        <div>
+          <label>PD-L1（22C3：CPS）:</label>
+          <select
+            value={interventions[index].markers?.cps || 'none'}
+            onChange={e => {
+              const updated = [...interventions];
+              updated[index].markers.cps = e.target.value;
+              setInterventions(updated);
+            }}
+          >
+            <option value="none">検査なし</option>
+            <option value="0">CPS &lt; 1</option>
+            <option value="1to9">CPS 1〜9</option>
+            <option value="10">CPS ≥ 10</option>
+          </select>
+        </div>
+
+        {/* MSI */}
+        <div>
+          <label>MSI:</label>
+          <select
+            value={interventions[index].markers?.msi || 'none'}
+            onChange={e => {
+              const updated = [...interventions];
+              updated[index].markers.msi = e.target.value;
+              setInterventions(updated);
+            }}
+          >
+            <option value="none">検査なし</option>
+            <option value="high">MSI-High</option>
+            <option value="low">MSI-Low / MSS</option>
+          </select>
+        </div>
+
+        {/* MMR */}
+        <div>
+          <label>MMR:</label>
+          <select
+            value={interventions[index].markers?.mmr || 'none'}
+            onChange={e => {
+              const updated = [...interventions];
+              updated[index].markers.mmr = e.target.value;
+              setInterventions(updated);
+            }}
+          >
+            <option value="none">検査なし</option>
+            <option value="dmmr">dMMR（修復機構欠損）</option>
+            <option value="pmmr">pMMR（修復機構保全）</option>
+          </select>
+        </div>
+
+      </div>
+
       <button
-      type="button"
-      onClick={() => {
-        const newInt = [...interventions];
-        newInt[index].markers = { ...primaryMarkers };
-        setInterventions(newInt);
-      }}
-    >
-      原発をコピー
-    </button>
+        type="button"
+        onClick={() => {
+          const newInt = [...interventions];
+          newInt[index].markers = {
+            ER: primaryMarkers.ER,
+            PgR: primaryMarkers.PgR,
+            HER2: primaryMarkers.HER2,
+            Ki67: primaryMarkers.Ki67,
+            sp142: primaryPdL1.sp142 || 'none',
+            cps: primaryPdL1.cps || 'none',
+            msi: primaryPdL1.msi || 'none',
+            mmr: primaryPdL1.mmr || 'none',
+          };
+          setInterventions(newInt);
+        }}
+      >
+        直前をコピー
+      </button>
 
     </div>
   </div>

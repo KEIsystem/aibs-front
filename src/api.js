@@ -43,4 +43,9 @@ export function fetchPatientData(patientId) {
   return api.get(`/api/patient/${patientId}/`).then(res => res.data);
 }
 
+// 新しく追加（術前・術後・転移再発すべて取得）
+export function fetchUnifiedPatientData(patientId) {
+  return api.get(`/api/unified/${patientId}/`).then(res => res.data);
+}
+
 export default api;

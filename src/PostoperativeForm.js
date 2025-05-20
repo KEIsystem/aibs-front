@@ -1,5 +1,6 @@
   // PostoperativeForm.js 完全版
   import React, { useState } from 'react';
+  import { fetchUnifiedPatientData } from './api';
   import BasicInfoPanel from './components/BasicInfoPanel';
   import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
   import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
@@ -104,6 +105,23 @@
     
       setFrailty(data.frailty || false);
     };
+
+    const fetchPatientData = async (id) => {
+      try {
+        const res = await api.get(`/api/patient/${id}/`);
+        if (res.status !== 200) {
+          alert(`患者データの取得に失敗しました (HTTP ${res.status})`);
+          return;
+        }
+        const json = res.data; // axios は .data に本体がある
+        handlePatientDataLoad(json);
+        setDataLoaded(true); // ← dataLoaded が使われているので
+      } catch (err) {
+        console.error("通信エラー:", err);
+        alert("通信エラーが発生しました");
+      }
+    };
+
 
     const handleResetForm = () => {
           setRecommendation(null);
@@ -243,10 +261,10 @@
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onSearch={handlePatientDataLoad}
+          onSearch={fetchPatientData}
           onReset={handleResetForm}
         />
-          
+                
 
         <BasicInfoPanel
       age={age} setAge={setAge}

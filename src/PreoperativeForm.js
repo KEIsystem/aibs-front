@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchUnifiedPatientData } from './api';
 import BasicInfoPanel from './components/BasicInfoPanel';
 import ERPgRInputPanel from './components/ERPgRInputPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
@@ -126,13 +127,11 @@ function PreoperativeForm() {
 const fetchPatientData = async (id) => {
   try {
     const res = await api.get(`/api/patient/${id}/`);
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("非JSONレスポンス:", text);
+    if (res.status !== 200) {
       alert(`患者データの取得に失敗しました (HTTP ${res.status})`);
       return;
     }
-    const json = await res.json();
+    const json = res.data;  // axios なら .data にJSONが入ってる
     handlePatientDataLoad(json);
   } catch (err) {
     console.error("通信エラー:", err);
