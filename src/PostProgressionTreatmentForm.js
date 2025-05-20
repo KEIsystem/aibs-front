@@ -436,10 +436,10 @@ function PostProgressionTreatmentForm() {
     const adjuvantData = adjuvantRef.current?.getAdjuvantData?.();
     const method = isUpdateMode ? 'PUT' : 'POST';
     const endpoint = `${process.env.REACT_APP_API_BASE_URL}/api/metastatic/submit`;
-  
+
     const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
     const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
-  
+
     const formData = {
       patient_id: patientId,
       basic_info: {
@@ -455,12 +455,12 @@ function PostProgressionTreatmentForm() {
           frailty: frailty,
         },
         family_history: {
-            breast: familyHistory.some(f => f.disease === "乳がん"),
-            ovary: familyHistory.some(f => f.disease === "卵巣がん"),
-            peritoneum: familyHistory.some(f => f.disease === "腹膜がん"),
-            pancreas: familyHistory.some(f => f.disease === "膵臓がん"),
-            others: familyHistory.some(f => f.disease === "その他")
-                  },
+          breast: familyHistory.some(f => f.disease === "乳がん"),
+          ovary: familyHistory.some(f => f.disease === "卵巣がん"),
+          peritoneum: familyHistory.some(f => f.disease === "腹膜がん"),
+          pancreas: familyHistory.some(f => f.disease === "膵臓がん"),
+          others: familyHistory.some(f => f.disease === "その他")
+        },
       },
       is_de_novo: isDeNovo,
       visceral_crisis: visceralCrisis,
@@ -477,8 +477,7 @@ function PostProgressionTreatmentForm() {
           ER: primaryMarkers.ER,
           PgR: primaryMarkers.PgR,
           HER2: primaryMarkers.HER2,
-          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
-          sp142, cps, msi, mmr
+          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10)
         },
         PD_L1: primaryPdL1,
         tumor_size: parseFloat(tumorSize || '0'),
@@ -496,24 +495,33 @@ function PostProgressionTreatmentForm() {
         markers: {
           ER, PgR,
           HER2: recurrenceMarkers.HER2,
-          Ki67: parseInt(recurrenceMarkers.Ki67 || '0', 10)
+          Ki67: parseInt(recurrenceMarkers.Ki67 || '0', 10),
+          sp142: sp142,
+          cps: cps,
+          msi: msi,
+          mmr: mmr
         },
         biopsy: recurrenceBiopsy,
         biopsy_site: recurrenceBiopsySite,
-        biopsy_date: recurrenceBiopsyDate,
+        biopsy_date: recurrenceBiopsyDate === '' ? null : recurrenceBiopsyDate,
         sites: metastasisSites,
         other_site_detail: otherSiteDetail,
       },
       local_therapy: localTherapy,
       systemic_treatments: treatments,
-      interventions: interventions,
+      interventions: interventions.map(intv => ({
+        ...intv,
+        biopsy_date: intv.biopsy_date === '' ? null : intv.biopsy_date,
+        surgery_date: intv.surgery_date === '' ? null : intv.surgery_date,
+        radiation_date: intv.radiation_date === '' ? null : intv.radiation_date,
+      })),
       is_deceased: isDeceased,
       date_of_death: isDeceased ? dateOfDeath : null,
-      cause_of_death: isDeceased ? causeOfDeath : null,
+      cause_of_death: isDeceased ? (causeOfDeath || '') : '',
     };
-  
+
     console.log("📤 送信内容（formData）:", JSON.stringify(formData, null, 2));
-  
+
     try {
       const result = await sendPostProgressionData(formData);
       setResult(result);
@@ -521,6 +529,7 @@ function PostProgressionTreatmentForm() {
       console.error("送信エラー:", error);
     }
   };
+
   
 
   return (
@@ -823,123 +832,164 @@ function PostProgressionTreatmentForm() {
     />
 
     {/* Allredスコア入力切替 */}
-    <div className="mt-2">
-      <label>
-        <input
-          type="checkbox"
-          checked={interventions[index].useAllred || false}
+    {/* Allredスコア切り替え */}
+      <div className="mt-2">
+        <label>
+          <input
+            type="checkbox"
+            checked={interventions[index].useAllred || false}
+            onChange={e => {
+              const updated = [...interventions];
+              updated[index].useAllred = e.target.checked;
+              setInterventions(updated);
+            }}
+          /> Allredスコアで入力する
+        </label>
+      </div>
+
+      {!interventions[index].useAllred ? (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label>ER（％）：</label>
+            <input
+              type="number"
+              name={`erPercent-${index}`}
+              value={interventions[index].erPercent || ''}
+              onChange={e => {
+                const updated = [...interventions];
+                updated[index].erPercent = e.target.value;
+                setInterventions(updated);
+              }}
+            />
+          </div>
+          <div>
+            <label>PgR（％）：</label>
+            <input
+              type="number"
+              name={`pgrPercent-${index}`}
+              value={interventions[index].pgrPercent || ''}
+              onChange={e => {
+                const updated = [...interventions];
+                updated[index].pgrPercent = e.target.value;
+                setInterventions(updated);
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label>ER PS：</label>
+            {[0, 1, 2, 3, 4, 5].map(val => (
+              <label key={`erps-${val}`} className="mr-2">
+                <input
+                  type="radio"
+                  name={`erPS-${index}`}
+                  value={val}
+                  checked={interventions[index].erPS == val}
+                  onChange={e => {
+                    const updated = [...interventions];
+                    updated[index].erPS = e.target.value;
+                    setInterventions(updated);
+                  }}
+                /> {val}
+              </label>
+            ))}
+          </div>
+          <div>
+            <label>ER IS：</label>
+            {[0, 1, 2, 3].map(val => (
+              <label key={`eris-${val}`} className="mr-2">
+                <input
+                  type="radio"
+                  name={`erIS-${index}`}
+                  value={val}
+                  checked={interventions[index].erIS == val}
+                  onChange={e => {
+                    const updated = [...interventions];
+                    updated[index].erIS = e.target.value;
+                    setInterventions(updated);
+                  }}
+                /> {val}
+              </label>
+            ))}
+          </div>
+          <div>
+            <label>PgR PS：</label>
+            {[0, 1, 2, 3, 4, 5].map(val => (
+              <label key={`pgrps-${val}`} className="mr-2">
+                <input
+                  type="radio"
+                  name={`pgrPS-${index}`}
+                  value={val}
+                  checked={interventions[index].pgrPS == val}
+                  onChange={e => {
+                    const updated = [...interventions];
+                    updated[index].pgrPS = e.target.value;
+                    setInterventions(updated);
+                  }}
+                /> {val}
+              </label>
+            ))}
+          </div>
+          <div>
+            <label>PgR IS：</label>
+            {[0, 1, 2, 3].map(val => (
+              <label key={`pgris-${val}`} className="mr-2">
+                <input
+                  type="radio"
+                  name={`pgrIS-${index}`}
+                  value={val}
+                  checked={interventions[index].pgrIS == val}
+                  onChange={e => {
+                    const updated = [...interventions];
+                    updated[index].pgrIS = e.target.value;
+                    setInterventions(updated);
+                  }}
+                /> {val}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* HER2 */}
+      <div className="mt-2">
+        <label>HER2：</label>
+        <select
+          name={`her2-${index}`}
+          value={interventions[index].markers?.HER2 || ''}
           onChange={e => {
             const updated = [...interventions];
-            updated[index].useAllred = e.target.checked;
+            updated[index].markers.HER2 = e.target.value;
             setInterventions(updated);
           }}
-        /> Allredスコアで入力する
-      </label>
-    </div>
+        >
+          <option value="">選択</option>
+          <option value="0">0</option>
+          <option value="1+">1+</option>
+          <option value="2+ (ISH陰性)">2+ (ISH陰性)</option>
+          <option value="2+ (ISH陽性)">2+ (ISH陽性)</option>
+          <option value="3+">3+</option>
+        </select>
+      </div>
 
-    {!interventions[index].useAllred ? (
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label>ER（％）：</label>
-          <input
-            type="number"
-            value={interventions[index].erPercent || ''}
-            onChange={e => {
-              const updated = [...interventions];
-              updated[index].erPercent = e.target.value;
-              setInterventions(updated);
-            }}
-          />
-        </div>
-        <div>
-          <label>PgR（％）：</label>
-          <input
-            type="number"
-            value={interventions[index].pgrPercent || ''}
-            onChange={e => {
-              const updated = [...interventions];
-              updated[index].pgrPercent = e.target.value;
-              setInterventions(updated);
-            }}
-          />
-        </div>
+      {/* Ki-67 */}
+      <div className="mt-2">
+        <label>Ki-67：</label>
+        <input
+          type="number"
+          name={`ki67-${index}`}
+          value={interventions[index].markers?.Ki67 || ''}
+          onChange={e => {
+            const updated = [...interventions];
+            updated[index].markers.Ki67 = e.target.value;
+            setInterventions(updated);
+          }}
+        />
       </div>
-    ) : (
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label>ER PS：</label>
-          {[0, 1, 2, 3, 4, 5].map(val => (
-            <label key={`erps-${val}`} className="mr-2">
-              <input
-                type="radio"
-                name={`erPS-${index}`}
-                value={val}
-                checked={interventions[index].erPS == val}
-                onChange={e => {
-                  const updated = [...interventions];
-                  updated[index].erPS = e.target.value;
-                  setInterventions(updated);
-                }}
-              /> {val}
-            </label>
-          ))}
-        </div>
-        <div>
-          <label>ER IS：</label>
-          {[0, 1, 2, 3].map(val => (
-            <label key={`eris-${val}`} className="mr-2">
-              <input
-                type="radio"
-                name={`erIS-${index}`}
-                value={val}
-                checked={interventions[index].erIS == val}
-                onChange={e => {
-                  const updated = [...interventions];
-                  updated[index].erIS = e.target.value;
-                  setInterventions(updated);
-                }}
-              /> {val}
-            </label>
-          ))}
-        </div>
-        <div>
-          <label>PgR PS：</label>
-          {[0, 1, 2, 3, 4, 5].map(val => (
-            <label key={`pgrps-${val}`} className="mr-2">
-              <input
-                type="radio"
-                name={`pgrPS-${index}`}
-                value={val}
-                checked={interventions[index].pgrPS == val}
-                onChange={e => {
-                  const updated = [...interventions];
-                  updated[index].pgrPS = e.target.value;
-                  setInterventions(updated);
-                }}
-              /> {val}
-            </label>
-          ))}
-        </div>
-        <div>
-          <label>PgR IS：</label>
-          {[0, 1, 2, 3].map(val => (
-            <label key={`pgris-${val}`} className="mr-2">
-              <input
-                type="radio"
-                name={`pgrIS-${index}`}
-                value={val}
-                checked={interventions[index].pgrIS == val}
-                onChange={e => {
-                  const updated = [...interventions];
-                  updated[index].pgrIS = e.target.value;
-                  setInterventions(updated);
-                }}
-              /> {val}
-            </label>
-          ))}
-        </div>
-      </div>
-    )}
+
+    )
 
     <div className="space-y-4">
 
@@ -1053,6 +1103,7 @@ function PostProgressionTreatmentForm() {
           ))}
         </div>
       </div>
+
 
     </div>
 
