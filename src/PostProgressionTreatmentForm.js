@@ -647,42 +647,48 @@ function PostProgressionTreatmentForm() {
       <fieldset className="border p-3 rounded">
         <legend className="font-semibold">PD-L1・MSI・MMR検査結果</legend>
 
-        <div className="mb-4">
-          <label className="font-semibold block mb-1">PD-L1（SP142）:</label>
+        <div className="space-y-4">
+          {/* PD-L1（SP142） */}
           <div>
-            <label><input type="radio" name="sp142" value="none" checked={sp142 === 'none'} onChange={() => setSp142('none')} /> 検査なし</label><br />
-            <label><input type="radio" name="sp142" value="IC0" checked={sp142 === 'IC0'} onChange={() => setSp142('IC0')} /> IC0（&lt;1%）</label><br />
-            <label><input type="radio" name="sp142" value="IC1" checked={sp142 === 'IC1'} onChange={() => setSp142('IC1')} /> IC1（1〜&lt;5%）</label><br />
-            <label><input type="radio" name="sp142" value="IC2" checked={sp142 === 'IC2'} onChange={() => setSp142('IC2')} /> IC2（5〜&lt;10%）</label><br />
-            <label><input type="radio" name="sp142" value="IC3" checked={sp142 === 'IC3'} onChange={() => setSp142('IC3')} /> IC3（≧10%）</label>
+            <label className="font-semibold block mb-1">PD-L1（SP142）:</label>
+            <div className="flex gap-4 flex-wrap">
+              <label><input type="radio" name="sp142" value="none" /> 検査なし</label>
+              <label><input type="radio" name="sp142" value="IC0" /> IC0（&lt;1%）</label>
+              <label><input type="radio" name="sp142" value="IC1" /> IC1（1〜5%）</label>
+              <label><input type="radio" name="sp142" value="IC2" /> IC2（5〜10%）</label>
+              <label><input type="radio" name="sp142" value="IC3" /> IC3（≧10%）</label>
+            </div>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <label className="font-semibold block mb-1">PD-L1（22C3）:</label>
+          {/* PD-L1（22C3） */}
           <div>
-            <label><input type="radio" name="cps" value="none" checked={cps === 'none'} onChange={() => setCps('none')} /> 検査なし</label><br />
-            <label><input type="radio" name="cps" value="0" checked={cps === '0'} onChange={() => setCps('0')} /> CPS &lt; 1</label><br />
-            <label><input type="radio" name="cps" value="1to9" checked={cps === '1to9'} onChange={() => setCps('1to9')} /> CPS 1〜9</label><br />
-            <label><input type="radio" name="cps" value="10" checked={cps === '10'} onChange={() => setCps('10')} /> CPS ≥ 10</label>
+            <label className="font-semibold block mb-1">PD-L1（22C3）:</label>
+            <div className="flex gap-4 flex-wrap">
+              <label><input type="radio" name="pd22c3" value="none" /> 検査なし</label>
+              <label><input type="radio" name="pd22c3" value="lt1" /> CPS &lt; 1</label>
+              <label><input type="radio" name="pd22c3" value="1to9" /> CPS 1〜9</label>
+              <label><input type="radio" name="pd22c3" value="gte10" /> CPS ≥ 10</label>
+            </div>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <label className="font-semibold block mb-1">MSI:</label>
+          {/* MSI */}
           <div>
-            <label><input type="radio" name="msi" value="none" checked={msi === 'none'} onChange={() => setMsi('none')} /> 検査なし</label><br />
-            <label><input type="radio" name="msi" value="high" checked={msi === 'high'} onChange={() => setMsi('high')} /> MSI-High</label><br />
-            <label><input type="radio" name="msi" value="low" checked={msi === 'low'} onChange={() => setMsi('low')} /> MSI-Low / MSS</label>
+            <label className="font-semibold block mb-1">MSI:</label>
+            <div className="flex gap-4 flex-wrap">
+              <label><input type="radio" name="msi" value="none" /> 検査なし</label>
+              <label><input type="radio" name="msi" value="high" /> MSI-High</label>
+              <label><input type="radio" name="msi" value="low" /> MSI-Low / MSS</label>
+            </div>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <label className="font-semibold block mb-1">MMR（Mismatch Repair）:</label>
+          {/* MMR */}
           <div>
-            <label><input type="radio" name="mmr" value="none" checked={mmr === 'none'} onChange={() => setMmr('none')} /> 検査なし</label><br />
-            <label><input type="radio" name="mmr" value="dmmr" checked={mmr === 'dmmr'} onChange={() => setMmr('dmmr')} /> dMMR（修復機構欠損）</label><br />
-            <label><input type="radio" name="mmr" value="pmmr" checked={mmr === 'pmmr'} onChange={() => setMmr('pmmr')} /> pMMR（保全あり）</label>
+            <label className="font-semibold block mb-1">MMR（Mismatch Repair）:</label>
+            <div className="flex gap-4 flex-wrap">
+              <label><input type="radio" name="mmr" value="none" /> 検査なし</label>
+              <label><input type="radio" name="mmr" value="dmmr" /> dMMR（修復機構欠損）</label>
+              <label><input type="radio" name="mmr" value="pmmr" /> pMMR（保全あり）</label>
+            </div>
           </div>
         </div>
       </fieldset>
@@ -934,113 +940,121 @@ function PostProgressionTreatmentForm() {
       </div>
     )}
 
-    <div className="mt-2 grid grid-cols-2 gap-4">
+    <div className="space-y-4">
+
+      {/* PD-L1（SP142） */}
       <div>
-        <label>HER2：</label>
-        <select
-          value={interventions[index].markers?.HER2 || ''}
-          onChange={e => {
-            const newInt = [...interventions];
-            newInt[index].markers.HER2 = e.target.value;
-            setInterventions(newInt);
-          }}
-        >
-          <option value="">選択</option>
-          <option value="0">0</option>
-          <option value="1+">1+</option>
-          <option value="2+ (ISH陰性)">2+ (ISH陰性)</option>
-          <option value="2+ (ISH陽性)">2+ (ISH陽性)</option>
-          <option value="3+">3+</option>
-        </select>
+        <label className="block font-semibold">PD-L1（SP142）:</label>
+        <div className="flex flex-wrap gap-4">
+          {[
+            { value: 'none', label: '検査なし' },
+            { value: 'IC0', label: 'IC0（<1%）' },
+            { value: 'IC1', label: 'IC1（1〜5%）' },
+            { value: 'IC2', label: 'IC2（5〜10%）' },
+            { value: 'IC3', label: 'IC3（≥10%）' },
+          ].map(opt => (
+            <label key={opt.value} className="flex items-center">
+              <input
+                type="radio"
+                name={`sp142-${index}`}
+                value={opt.value}
+                checked={interventions[index].markers?.sp142 === opt.value}
+                onChange={e => {
+                  const updated = [...interventions];
+                  updated[index].markers.sp142 = e.target.value;
+                  setInterventions(updated);
+                }}
+              />
+              <span className="ml-1">{opt.label}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
+      {/* PD-L1（22C3：CPS） */}
       <div>
-        <label>Ki-67：</label>
-        <input
-          type="number"
-          value={interventions[index].markers?.Ki67 || ''}
-          onChange={e => {
-            const newInt = [...interventions];
-            newInt[index].markers.Ki67 = e.target.value;
-            setInterventions(newInt);
-          }}
-        />
+        <label className="block font-semibold">PD-L1（22C3：CPS）:</label>
+        <div className="flex flex-wrap gap-4">
+          {[
+            { value: 'none', label: '検査なし' },
+            { value: '0', label: 'CPS < 1' },
+            { value: '1to9', label: 'CPS 1〜9' },
+            { value: '10', label: 'CPS ≥ 10' },
+          ].map(opt => (
+            <label key={opt.value} className="flex items-center">
+              <input
+                type="radio"
+                name={`cps-${index}`}
+                value={opt.value}
+                checked={interventions[index].markers?.cps === opt.value}
+                onChange={e => {
+                  const updated = [...interventions];
+                  updated[index].markers.cps = e.target.value;
+                  setInterventions(updated);
+                }}
+              />
+              <span className="ml-1">{opt.label}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-
-        {/* SP142 */}
-        <div>
-          <label>PD-L1（SP142）:</label>
-          <select
-            value={interventions[index].markers?.sp142 || 'none'}
-            onChange={e => {
-              const updated = [...interventions];
-              updated[index].markers.sp142 = e.target.value;
-              setInterventions(updated);
-            }}
-          >
-            <option value="none">検査なし</option>
-            <option value="IC0">IC0（&lt;1%）</option>
-            <option value="IC1">IC1（1-5%）</option>
-            <option value="IC2">IC2（5-10%）</option>
-            <option value="IC3">IC3（&gt;10%）</option>
-          </select>
+      {/* MSI */}
+      <div>
+        <label className="block font-semibold">MSI:</label>
+        <div className="flex flex-wrap gap-4">
+          {[
+            { value: 'none', label: '検査なし' },
+            { value: 'high', label: 'MSI-High' },
+            { value: 'low', label: 'MSI-Low / MSS' },
+          ].map(opt => (
+            <label key={opt.value} className="flex items-center">
+              <input
+                type="radio"
+                name={`msi-${index}`}
+                value={opt.value}
+                checked={interventions[index].markers?.msi === opt.value}
+                onChange={e => {
+                  const updated = [...interventions];
+                  updated[index].markers.msi = e.target.value;
+                  setInterventions(updated);
+                }}
+              />
+              <span className="ml-1">{opt.label}</span>
+            </label>
+          ))}
         </div>
-
-        {/* CPS */}
-        <div>
-          <label>PD-L1（22C3：CPS）:</label>
-          <select
-            value={interventions[index].markers?.cps || 'none'}
-            onChange={e => {
-              const updated = [...interventions];
-              updated[index].markers.cps = e.target.value;
-              setInterventions(updated);
-            }}
-          >
-            <option value="none">検査なし</option>
-            <option value="0">CPS &lt; 1</option>
-            <option value="1to9">CPS 1〜9</option>
-            <option value="10">CPS ≥ 10</option>
-          </select>
-        </div>
-
-        {/* MSI */}
-        <div>
-          <label>MSI:</label>
-          <select
-            value={interventions[index].markers?.msi || 'none'}
-            onChange={e => {
-              const updated = [...interventions];
-              updated[index].markers.msi = e.target.value;
-              setInterventions(updated);
-            }}
-          >
-            <option value="none">検査なし</option>
-            <option value="high">MSI-High</option>
-            <option value="low">MSI-Low / MSS</option>
-          </select>
-        </div>
-
-        {/* MMR */}
-        <div>
-          <label>MMR:</label>
-          <select
-            value={interventions[index].markers?.mmr || 'none'}
-            onChange={e => {
-              const updated = [...interventions];
-              updated[index].markers.mmr = e.target.value;
-              setInterventions(updated);
-            }}
-          >
-            <option value="none">検査なし</option>
-            <option value="dmmr">dMMR（修復機構欠損）</option>
-            <option value="pmmr">pMMR（修復機構保全）</option>
-          </select>
-        </div>
-
       </div>
+
+      {/* MMR */}
+      <div>
+        <label className="block font-semibold">MMR（Mismatch Repair）:</label>
+        <div className="flex flex-wrap gap-4">
+          {[
+            { value: 'none', label: '検査なし' },
+            { value: 'dmmr', label: 'dMMR（修復機構欠損）' },
+            { value: 'pmmr', label: 'pMMR（保全あり）' },
+          ].map(opt => (
+            <label key={opt.value} className="flex items-center">
+              <input
+                type="radio"
+                name={`mmr-${index}`}
+                value={opt.value}
+                checked={interventions[index].markers?.mmr === opt.value}
+                onChange={e => {
+                  const updated = [...interventions];
+                  updated[index].markers.mmr = e.target.value;
+                  setInterventions(updated);
+                }}
+              />
+              <span className="ml-1">{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+    </div>
+
 
       <button
         type="button"
@@ -1063,7 +1077,7 @@ function PostProgressionTreatmentForm() {
       </button>
 
     </div>
-  </div>
+  
 )}
 
 
