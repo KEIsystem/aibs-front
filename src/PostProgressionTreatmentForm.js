@@ -256,7 +256,7 @@ function PostProgressionTreatmentForm() {
       HER2: data.primary?.HER2 || '',
       Ki67: data.primary?.Ki67?.toString() || ''
     });
-    setPrimaryPdL1(data.primary?.PD_L1 || []);
+    setPrimaryPdL1(data.primary?.PD_L1 || { sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' });
     setTumorSize(data.primary?.tumor_size || '');
     setInvasionChestWall(data.primary?.chest_wall || false);
     setInvasionSkin(data.primary?.skin || false);
@@ -662,22 +662,95 @@ function PostProgressionTreatmentForm() {
           <div>
             <label className="font-semibold block mb-1">PD-L1（SP142）:</label>
             <div className="flex gap-4 flex-wrap">
-              <label><input type="radio" name="sp142" value="none" /> 検査なし</label>
-              <label><input type="radio" name="sp142" value="IC0" /> IC0（&lt;1%）</label>
-              <label><input type="radio" name="sp142" value="IC1" /> IC1（1〜5%）</label>
-              <label><input type="radio" name="sp142" value="IC2" /> IC2（5〜10%）</label>
-              <label><input type="radio" name="sp142" value="IC3" /> IC3（≧10%）</label>
+              <label>
+                <input
+                  type="radio"
+                  name="sp142"
+                  value="none"
+                  checked={sp142 === "none"}
+                  onChange={e => setSp142(e.target.value)}
+                /> 検査なし
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="sp142"
+                  value="IC0"
+                  checked={sp142 === "IC0"}
+                  onChange={e => setSp142(e.target.value)}
+                /> IC0（&lt;1%）
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="sp142"
+                  value="IC1"
+                  checked={sp142 === "IC1"}
+                  onChange={e => setSp142(e.target.value)}
+                /> IC1（1〜5%）
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="sp142"
+                  value="IC2"
+                  checked={sp142 === "IC2"}
+                  onChange={e => setSp142(e.target.value)}
+                /> IC2（5〜10%）
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="sp142"
+                  value="IC3"
+                  checked={sp142 === "IC3"}
+                  onChange={e => setSp142(e.target.value)}
+                /> IC3（≧10%）
+              </label>
             </div>
           </div>
+
 
           {/* PD-L1（22C3） */}
           <div>
             <label className="font-semibold block mb-1">PD-L1（22C3）:</label>
             <div className="flex gap-4 flex-wrap">
-              <label><input type="radio" name="pd22c3" value="none" /> 検査なし</label>
-              <label><input type="radio" name="pd22c3" value="lt1" /> CPS &lt; 1</label>
-              <label><input type="radio" name="pd22c3" value="1to9" /> CPS 1〜9</label>
-              <label><input type="radio" name="pd22c3" value="gte10" /> CPS ≥ 10</label>
+              <label>
+                <input
+                  type="radio"
+                  name="pd22c3"
+                  value="none"
+                  checked={cps === "none"}
+                  onChange={e => setCps(e.target.value)}
+                /> 検査なし
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="pd22c3"
+                  value="lt1"
+                  checked={cps === "lt1"}
+                  onChange={e => setCps(e.target.value)}
+                /> CPS &lt; 1
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="pd22c3"
+                  value="1to9"
+                  checked={cps === "1to9"}
+                  onChange={e => setCps(e.target.value)}
+                /> CPS 1〜9
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="pd22c3"
+                  value="gte10"
+                  checked={cps === "gte10"}
+                  onChange={e => setCps(e.target.value)}
+                /> CPS ≥ 10
+              </label>
             </div>
           </div>
 
@@ -685,19 +758,68 @@ function PostProgressionTreatmentForm() {
           <div>
             <label className="font-semibold block mb-1">MSI:</label>
             <div className="flex gap-4 flex-wrap">
-              <label><input type="radio" name="msi" value="none" /> 検査なし</label>
-              <label><input type="radio" name="msi" value="high" /> MSI-High</label>
-              <label><input type="radio" name="msi" value="low" /> MSI-Low / MSS</label>
+              <label>
+                <input
+                  type="radio"
+                  name="msi"
+                  value="none"
+                  checked={msi === "none"}
+                  onChange={e => setMsi(e.target.value)}
+                /> 検査なし
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="msi"
+                  value="high"
+                  checked={msi === "high"}
+                  onChange={e => setMsi(e.target.value)}
+                /> MSI-High
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="msi"
+                  value="low"
+                  checked={msi === "low"}
+                  onChange={e => setMsi(e.target.value)}
+                /> MSI-Low / MSS
+              </label>
             </div>
           </div>
+
 
           {/* MMR */}
           <div>
             <label className="font-semibold block mb-1">MMR（Mismatch Repair）:</label>
             <div className="flex gap-4 flex-wrap">
-              <label><input type="radio" name="mmr" value="none" /> 検査なし</label>
-              <label><input type="radio" name="mmr" value="dmmr" /> dMMR（修復機構欠損）</label>
-              <label><input type="radio" name="mmr" value="pmmr" /> pMMR（保全あり）</label>
+              <label>
+                <input
+                  type="radio"
+                  name="mmr"
+                  value="none"
+                  checked={mmr === "none"}
+                  onChange={e => setMmr(e.target.value)}
+                /> 検査なし
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="mmr"
+                  value="dmmr"
+                  checked={mmr === "dmmr"}
+                  onChange={e => setMmr(e.target.value)}
+                /> dMMR（修復機構欠損）
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="mmr"
+                  value="pmmr"
+                  checked={mmr === "pmmr"}
+                  onChange={e => setMmr(e.target.value)}
+                /> pMMR（保全あり）
+              </label>
             </div>
           </div>
         </div>
@@ -1028,9 +1150,9 @@ function PostProgressionTreatmentForm() {
         <div className="flex flex-wrap gap-4">
           {[
             { value: 'none', label: '検査なし' },
-            { value: '0', label: 'CPS < 1' },
+            { value: 'lt1', label: 'CPS < 1' },
             { value: '1to9', label: 'CPS 1〜9' },
-            { value: '10', label: 'CPS ≥ 10' },
+            { value: 'gte10', label: 'CPS ≥ 10' },
           ].map(opt => (
             <label key={opt.value} className="flex items-center">
               <input
