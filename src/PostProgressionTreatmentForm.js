@@ -444,11 +444,21 @@ function PostProgressionTreatmentForm() {
     const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
     const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
 
+    const formatDateForBackend = (dateStr) => {
+      if (!dateStr) return null;
+      try {
+        return new Date(dateStr).toISOString().slice(0, 10);
+      } catch (e) {
+        console.warn("不正な日付形式:", dateStr);
+        return null;
+      }
+    };
+
     const formData = {
       patient_id: patientId,
       basic_info: {
         age,
-        birth_date: birthDate,
+        birth_date: formatDateForBackend(birthDate),
         gender,
         is_premenopausal: isPremenopausal,
         past_treatment: pastMedicalHistory,
@@ -471,12 +481,12 @@ function PostProgressionTreatmentForm() {
       primary_tumor_info: {
         received_NAC: receivedNAC,
         NAC_regimen: nacRegimen,
-        NAC_end_date: nacEndDate,
+        NAC_end_date: formatDateForBackend(nacEndDate),
         anthra_response: anthraResponse,
         taxane_response: taxaneResponse,
         surgery_type: surgeryType,
         axillary_surgery: axillarySurgery,
-        surgery_date: surgeryDate,
+        surgery_date: formatDateForBackend(surgeryDate),
         markers: {
           ER: primaryMarkers.ER,
           PgR: primaryMarkers.PgR,
@@ -495,7 +505,7 @@ function PostProgressionTreatmentForm() {
       },
       adjuvant_therapy: adjuvantData,
       recurrence: {
-        recurrence_date: recurrenceDate,
+        recurrence_date: formatDateForBackend(recurrenceDate),
         markers: {
           ER, PgR,
           HER2: recurrenceMarkers.HER2,
@@ -507,26 +517,40 @@ function PostProgressionTreatmentForm() {
         },
         foundation_one: {
             status: foundationStatus,
-            exam_date: foundationDate,
+            exam_date: formatDateForBackend(foundationDate),
             comment: foundationComment,
           },
         
         biopsy: recurrenceBiopsy,
         biopsy_site: recurrenceBiopsySite,
-        biopsy_date: recurrenceBiopsyDate === '' ? null : recurrenceBiopsyDate,
+        biopsy_date: formatDateForBackend(recurrenceBiopsyDate),
         sites: metastasisSites,
         other_site_detail: otherSiteDetail,
       },
-      local_therapy: localTherapy,
-      systemic_treatments: treatments,
+      local_therapy: {
+        surgery: localTherapy.surgery,
+        surgery_date: formatDateForBackend(localTherapy.surgery_date),
+        surgery_note: localTherapy.surgery_note,
+        radiation: localTherapy.radiation,
+        radiation_date: formatDateForBackend(localTherapy.radiation_date),
+        radiation_note: localTherapy.radiation_note
+      },
+      systemic_treatments: treatments.map(t => ({
+        treatment_line_id: t.treatmentLineId,
+        start_date: formatDateForBackend(t.startDate),
+        end_date: formatDateForBackend(t.endDate),
+        drugs: t.drugs,
+        outcome: t.outcome,
+        metastasis_sites: t.metastasisSites || {},
+        other_site_detail: t.otherSiteDetail || ''
+      })),
       interventions: interventions.map(intv => ({
         ...intv,
-        biopsy_date: intv.biopsy_date === '' ? null : intv.biopsy_date,
-        surgery_date: intv.surgery_date === '' ? null : intv.surgery_date,
-        radiation_date: intv.radiation_date === '' ? null : intv.radiation_date,
+        biopsy_date: formatDateForBackend(intv.biopsy_date),
+        surgery_date: formatDateForBackend(intv.surgery_date),
+        radiation_date: formatDateForBackend(intv.radiation_date),
       })),
-      is_deceased: isDeceased,
-      date_of_death: isDeceased ? dateOfDeath : null,
+      date_of_death: isDeceased ? formatDateForBackend(dateOfDeath) : null,
       cause_of_death: isDeceased ? (causeOfDeath || '') : '',
     };
 
