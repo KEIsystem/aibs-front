@@ -15,7 +15,7 @@ import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import api from './api';
 import { sendPostProgressionData } from './api';
-
+import FoundationOnePanel from './components/FoundationOnePanel';
 
 const drugCategories = {
   luminal: ['TAM', 'ANA', 'LET', 'EXE', 'Ful', 'LH-RHa', 'Palbo', 'Abema', 'Ful+Capi', 'EXE+EVE', 'MPA'],
@@ -97,6 +97,10 @@ function PostProgressionTreatmentForm() {
   const [cps, setCps] = useState('none');
   const [msi, setMsi] = useState('none');
   const [mmr, setMmr] = useState('none');
+
+  const [foundationStatus, setFoundationStatus] = useState("未検査");
+  const [foundationDate, setFoundationDate] = useState("");
+  const [foundationComment, setFoundationComment] = useState("");
 
   const [recurrenceDate, setRecurrenceDate] = useState('');
   const [localTherapy, setLocalTherapy] = useState({
@@ -501,6 +505,12 @@ function PostProgressionTreatmentForm() {
           msi: msi,
           mmr: mmr
         },
+        foundation_one: {
+            status: foundationStatus,
+            exam_date: foundationDate,
+            comment: foundationComment,
+          },
+        
         biopsy: recurrenceBiopsy,
         biopsy_site: recurrenceBiopsySite,
         biopsy_date: recurrenceBiopsyDate === '' ? null : recurrenceBiopsyDate,
@@ -825,7 +835,14 @@ function PostProgressionTreatmentForm() {
         </div>
       </fieldset>
 
-
+      <FoundationOnePanel
+        foundationStatus={foundationStatus}
+        setFoundationStatus={setFoundationStatus}
+        foundationDate={foundationDate}
+        setFoundationDate={setFoundationDate}
+        foundationComment={foundationComment}
+        setFoundationComment={setFoundationComment}
+      />
 
       <h4>局所療法（1次治療前）</h4>
       <label><input type="checkbox" checked={localTherapy.surgery} onChange={e => setLocalTherapy({ ...localTherapy, surgery: e.target.checked })} /> 手術療法</label>
