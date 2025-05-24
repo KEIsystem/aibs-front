@@ -454,6 +454,12 @@ function PostProgressionTreatmentForm() {
       }
     };
 
+    function sanitizeIntegerField(value) {
+      if (value === "" || value === null || value === undefined) return 0; // または null
+      return parseInt(value, 10);
+    }
+
+
     const formData = {
       patient_id: patientId,
       basic_info: {
@@ -549,8 +555,19 @@ function PostProgressionTreatmentForm() {
         biopsy_date: formatDateForBackend(intv.biopsy_date),
         surgery_date: formatDateForBackend(intv.surgery_date),
         radiation_date: formatDateForBackend(intv.radiation_date),
+        erPercent: sanitizeIntegerField(intv.erPercent),
+        pgrPercent: sanitizeIntegerField(intv.pgrPercent),
+        erPS: sanitizeIntegerField(intv.erPS),
+        erIS: sanitizeIntegerField(intv.erIS),
+        pgrPS: sanitizeIntegerField(intv.pgrPS),
+        pgrIS: sanitizeIntegerField(intv.pgrIS),
+        markers: {
+          ...intv.markers,
+          Ki67: sanitizeIntegerField(intv.markers?.Ki67),
+        }
       })),
       date_of_death: isDeceased ? formatDateForBackend(dateOfDeath) : null,
+      is_deceased: isDeceased,
       cause_of_death: isDeceased ? (causeOfDeath || '') : '',
     };
 
