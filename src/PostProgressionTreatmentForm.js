@@ -440,6 +440,7 @@ function PostProgressionTreatmentForm() {
     const adjuvantData = adjuvantRef.current?.getAdjuvantData?.();
     const method = isUpdateMode ? 'PUT' : 'POST';
     const endpoint = `${process.env.REACT_APP_API_BASE_URL}/api/metastatic/submit`;
+    const isAnonymous = !patientId || patientId.trim() === "";
 
     const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
     const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
@@ -574,7 +575,7 @@ function PostProgressionTreatmentForm() {
     console.log("📤 送信内容（formData）:", JSON.stringify(formData, null, 2));
 
     try {
-      const result = await sendPostProgressionData(formData);
+      const result = await sendPostProgressionData(formData, isUpdateMode, patientId);
       setResult(result);
     } catch (error) {
       console.error("送信エラー:", error);

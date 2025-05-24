@@ -31,11 +31,16 @@ export function sendPostoperativeData(data, isUpdate = false, patientId = null) 
 
 //
 // ===== 転移・再発（PostPD）フォーム =====
-export function sendPostProgressionData(data, isUpdate = false) {
+export function sendPostProgressionData(data, isUpdate = false, patientId = "") {
   const method = isUpdate ? 'put' : 'post';
-  const url = '/api/metastatic/submit';
+  const url =
+    (!patientId || patientId.trim() === "")
+      ? '/api/metastatic/submit'  // 保存なし → patient_idなし
+      : `/api/metastatic/submit/${patientId}`;  // 保存あり
+
   return api({ method, url, data }).then(res => res.data);
 }
+
 
 //
 // ===== 保存済み患者データの取得 =====

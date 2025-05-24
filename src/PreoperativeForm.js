@@ -203,7 +203,7 @@ const fetchPatientData = async (id) => {
       console.log("🧪 Final payload:", payload);
      
     try {
-      const json = await sendPreoperativeData(payload, isUpdateMode);
+      const json = await sendPreoperativeData(payload, isUpdateMode, patientId);
       if (json.recommendation) {
         setRecommendation(json.recommendation);
       } else if (json.error) {
