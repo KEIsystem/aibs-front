@@ -16,6 +16,7 @@ import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import api from './api';
 import { sendPostProgressionData } from './api';
 import FoundationOnePanel from './components/FoundationOnePanel';
+import { saveDoubtCase } from './utils/saveDoubtCase';
 
 const drugCategories = {
   luminal: ['TAM', 'ANA', 'LET', 'EXE', 'Ful', 'LH-RHa', 'Palbo', 'Abema', 'Ful+Capi', 'EXE+EVE', 'MPA'],
@@ -132,17 +133,20 @@ function PostProgressionTreatmentForm() {
   const adjuvantRef = useRef();
   const [visceralCrisis, setVisceralCrisis] = useState(false);
   const [recurrenceBiopsyDate, setRecurrenceBiopsyDate] = useState('');
-  const [result, setResult] = useState(null);
+  const [recommendation, setRecommendation] = useState(null)
   const [isDeceased, setIsDeceased] = useState(false);
   const [dateOfDeath, setDateOfDeath] = useState('');
   const [causeOfDeath, setCauseOfDeath] = useState('');
 
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [doubtComment, setDoubtComment] = useState('');
+  const [formData, setFormData] = useState(null);
+
 
     useEffect(() => {
     if (isUpdateMode && dataLoaded) {
       console.log(" useEffectによる初期化処理");
-      setResult(null);  // 推奨治療の結果をリセット
+      setRecommendation(null);  // 推奨治療の結果をリセット
     }
   }, [isUpdateMode, dataLoaded]);
 
@@ -223,7 +227,7 @@ function PostProgressionTreatmentForm() {
     setIsDeceased(false);
     setDateOfDeath('');
     setCauseOfDeath('');
-    setResult(null);
+    setRecommendation(null);
     setCopyPrimaryToRecurrence(false);
   };
 
@@ -573,10 +577,10 @@ function PostProgressionTreatmentForm() {
     };
 
     console.log("📤 送信内容（formData）:", JSON.stringify(formData, null, 2));
-
+    setFormData(formData);
     try {
-      const result = await sendPostProgressionData(formData, isUpdateMode, patientId);
-      setResult(result);
+      const recommendation = await sendPostProgressionData(formData, isUpdateMode, patientId);
+      setRecommendation(recommendation);
     } catch (error) {
       console.error("送信エラー:", error);
     }
@@ -1432,36 +1436,57 @@ function PostProgressionTreatmentForm() {
         >
           送信
         </button>
-        {result && (
+        {recommendation && (
         <div className="mt-6 p-4 border rounded bg-gray-100">
           <h3 className="text-lg font-semibold">🩺 推奨治療</h3>
           <ul className="list-disc ml-6">
-            {result["治療提案"]?.map((item, idx) => (
+            {recommendation["治療提案"]?.map((item, idx) => (
               <li key={`plan-${idx}`}>{item}</li>
             ))}
           </ul>
       
-          {result["注意事項"]?.length > 0 && (
+          {recommendation["注意事項"]?.length > 0 && (
             <>
               <h4 className="mt-4 font-semibold">⚠️ 注意事項</h4>
               <ul className="list-disc ml-6 text-red-600">
-                {result["注意事項"].map((alert, idx) => (
+                {recommendation["注意事項"].map((alert, idx) => (
                   <li key={`alert-${idx}`}>{alert}</li>
                 ))}
               </ul>
             </>
           )}
       
-          {result["参考文献"]?.length > 0 && (
+          {recommendation["参考文献"]?.length > 0 && (
             <>
               <h4 className="mt-4 font-semibold">📚 参考文献</h4>
               <ul className="list-disc ml-6 text-sm text-gray-700">
-                {result["参考文献"].map((ref, idx) => (
+                {recommendation["参考文献"].map((ref, idx) => (
                   <li key={`ref-${idx}`}>{ref}</li>
                 ))}
               </ul>
             </>
           )}
+
+          {/* ✅ 疑問症例の自由記載欄（アラートの有無にかかわらず表示） */}
+          <div style={{ marginTop: '20px' }}>
+            <label htmlFor="doubt-comment">💬 疑問に思った点を自由に記載：</label><br />
+            <textarea
+              id="doubt-comment"
+              rows={4}
+              cols={60}
+              value={doubtComment}
+              onChange={(e) => setDoubtComment(e.target.value)}
+              placeholder="例：この症例でNACが推奨されない理由が不明です…"
+              style={{ marginTop: '8px', marginBottom: '12px', padding: '8px', borderRadius: '6px' }}
+            />
+            <br />
+            <button
+              onClick={() => saveDoubtCase("recurrence", formData, recommendation, doubtComment)}
+              style={{ backgroundColor: '#f4c430', padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+            >
+              この症例を疑問症例として保存する
+            </button>
+          </div>
         </div>
       )}
       </div>

@@ -6,6 +6,7 @@ import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import api from './api';
 import { sendPreoperativeData } from './api';
+import { saveDoubtCase } from './utils/saveDoubtCase';
 
 function PreoperativeForm() {
   // 基本情報
@@ -41,6 +42,8 @@ function PreoperativeForm() {
   const [recommendation, setRecommendation] = useState(null);
 
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [doubtComment, setDoubtComment] = useState('');
+  const [formData, setFormData] = useState(null);
 
   const checkIfPatientExists = async (id) => {
     try {
@@ -201,7 +204,7 @@ const fetchPatientData = async (id) => {
       console.log("🧪 interpretedMarkers:", interpretedMarkers);  // ★追加
       console.log("🧪 payload:", payload);  // ★追加
       console.log("🧪 Final payload:", payload);
-     
+      setFormData(payload); // フォームデータを保存
     try {
       const json = await sendPreoperativeData(payload, isUpdateMode, patientId);
       if (json.recommendation) {
@@ -345,24 +348,47 @@ const fetchPatientData = async (id) => {
 
        {/* 推奨治療結果の表示 */}
        {recommendation && (
-        <div className="mt-6 border border-gray-300 p-4">
-          <h4 className="text-lg font-semibold mb-2">推奨治療結果</h4>
-          <p><strong>サブタイプ：</strong>{recommendation["サブタイプ"]}</p>
-          <p><strong>推奨：</strong>{recommendation["推奨"]}</p>
-          <p><strong>根拠：</strong>{recommendation["根拠"]}</p>
-          {recommendation["PMID"] && <p><strong>参考文献：</strong>PMID: {recommendation["PMID"]}</p>}
-          {recommendation["アラート"] && (
-            <div className="text-red-600">
-              <strong>アラート：</strong>
-              <ul className="list-disc list-inside">
-                {recommendation["アラート"].map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
+          <div className="mt-6 border border-gray-300 p-4">
+            <h4 className="text-lg font-semibold mb-2">推奨治療結果</h4>
+            <p><strong>サブタイプ：</strong>{recommendation["サブタイプ"]}</p>
+            <p><strong>推奨：</strong>{recommendation["推奨"]}</p>
+            <p><strong>根拠：</strong>{recommendation["根拠"]}</p>
+            {recommendation["PMID"] && <p><strong>参考文献：</strong>PMID: {recommendation["PMID"]}</p>}
+            
+            {recommendation["アラート"] && (
+              <div className="text-red-600">
+                <strong>アラート：</strong>
+                <ul className="list-disc list-inside">
+                  {recommendation["アラート"].map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* ✅ 疑問症例の自由記載欄（アラートの有無にかかわらず表示） */}
+            <div style={{ marginTop: '20px' }}>
+              <label htmlFor="doubt-comment">💬 疑問に思った点を自由に記載：</label><br />
+              <textarea
+                id="doubt-comment"
+                rows={4}
+                cols={60}
+                value={doubtComment}
+                onChange={(e) => setDoubtComment(e.target.value)}
+                placeholder="例：この症例でNACが推奨されない理由が不明です…"
+                style={{ marginTop: '8px', marginBottom: '12px', padding: '8px', borderRadius: '6px' }}
+              />
+              <br />
+              <button
+                onClick={() => saveDoubtCase("preoperative", formData, recommendation, doubtComment)}
+                style={{ backgroundColor: '#f4c430', padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+              >
+                この症例を疑問症例として保存する
+              </button>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      
 
       
     </form>

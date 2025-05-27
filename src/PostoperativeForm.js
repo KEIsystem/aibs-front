@@ -7,6 +7,7 @@
   import PatientIdSearchPanel from './components/PatientIdSearchPanel';
   import api from './api';
   import { sendPostoperativeData } from './api';
+  import { saveDoubtCase } from './utils/saveDoubtCase';
 
 
   function PostoperativeForm() {
@@ -54,6 +55,9 @@
     const [recommendation, setRecommendation] = useState(null);
 
     const [isUpdateMode, setIsUpdateMode] = useState(false);
+
+    const [doubtComment, setDoubtComment] = useState("");
+    const [formData, setFormData] = useState(null);
 
     const handlePatientDataLoad = (data) => {
       console.log("📥 検索結果（patient data）:", data);
@@ -238,6 +242,7 @@
         const json = await sendPostoperativeData(payload, isUpdateMode, patientId);
 
         console.log("サーバー応答:", json);
+        setFormData(payload); // フォームデータを保存
 
         if (
           json.recommendation &&
@@ -352,6 +357,26 @@
               <p><strong>参考文献：</strong>{recommendation["PMID"].join(" / ")}</p>
             )}
             {recommendation["アラート"] && <p style={{ color: 'red' }}><strong>アラート：</strong>{recommendation["アラート"].join(' / ')}</p>}
+
+            <div style={{ marginTop: '20px' }}>
+              <label htmlFor="doubt-comment">💬 疑問に思った点を自由に記載：</label><br />
+              <textarea
+                id="doubt-comment"
+                rows={4}
+                cols={60}
+                value={doubtComment}
+                onChange={(e) => setDoubtComment(e.target.value)}
+                placeholder="例：再発までの期間が短いのにホルモン療法だけになっているのが気になります…"
+                style={{ marginTop: '8px', marginBottom: '12px', padding: '8px', borderRadius: '6px' }}
+              />
+              <br />
+              <button
+                onClick={() => saveDoubtCase("postoperative", formData, recommendation, doubtComment)}
+                style={{ backgroundColor: '#f4c430', padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+              >
+                この症例を疑問症例として保存する
+              </button>
+            </div>
           </div>
         )}
       </form>
