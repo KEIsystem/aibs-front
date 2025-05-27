@@ -9,7 +9,7 @@ function App() {
     <Router>
       <div className="App min-h-screen flex flex-col">
         <header className="p-4">
-          <h1 className="text-2xl font-bold">AI Breast Surgeon (AIBS) Project: 症例情報入力による推奨治療システム Ver.1.2</h1>
+          <h1 className="text-2xl font-bold">AI Breast Surgeon (AIBS) Project: 症例情報入力による推奨治療システム Ver.1.3</h1>
         </header>
 
         <main className="flex-grow p-4 min-h-[80vh]">

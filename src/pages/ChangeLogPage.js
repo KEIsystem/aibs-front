@@ -5,6 +5,8 @@ function ChangeLogPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">📝 変更履歴</h1>
       <ul className="list-disc ml-6 space-y-2 text-sm">
+        <li><strong>2025/05/25:</strong> 【Ver1.3】 リリース！</li>
+        <li><strong>2025/05/25:</strong> 疑問症例を投稿できるシステムを生成しました</li>
         <li><strong>2025/05/25:</strong> 【Ver1.2】 リリース！</li>
         <li><strong>2025/05/25:</strong> Foundation Oneに関する入力パネルを追加</li>
         <li><strong>2025/05/20:</strong> 【Ver1.1】 リリース！</li>
