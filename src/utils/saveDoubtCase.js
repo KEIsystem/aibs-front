@@ -1,5 +1,5 @@
 // src/utils/saveDoubtCase.js
-import api from './api';
+import api from '../api';
 
 export const saveDoubtCase = async (caseType, inputData, outputData, comment) => {
   try {
