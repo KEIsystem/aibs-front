@@ -17,6 +17,7 @@ import api from './api';
 import { sendPostProgressionData } from './api';
 import FoundationOnePanel from './components/FoundationOnePanel';
 import { saveDoubtCase } from './utils/saveDoubtCase';
+import { loadPatientDataCommon } from './utils/loadPatientData';
 
 const drugCategories = {
   luminal: ['TAM', 'ANA', 'LET', 'EXE', 'Ful', 'LH-RHa', 'Palbo', 'Abema', 'Ful+Capi', 'EXE+EVE', 'MPA'],
@@ -232,122 +233,73 @@ function PostProgressionTreatmentForm() {
   };
 
 
-  const handlePatientDataLoad = (data) => {
-    console.log("📥 検索結果（patient data）:", data);
-    
-    resetForm();
-    setIsUpdateMode(true);
-    setDataLoaded(true);
+  const handlePatientDataLoad = async (data) => {
+    try {
+      console.log("受信データ（転移・再発）:", data);
+      setIsUpdateMode(true);
 
-    setBirthDate(data.birth_date || '');
-    setGender(data.gender || '');
-    setIsPremenopausal(data.is_premenopausal || false);
-    setPastMedicalHistory(data.past_medical_history || '');
-    setMedications(data.medications || '');
-    setAllergies(data.allergies || '');
-    setGbrca(data.gbrca || '未検査');
-    setFamilyHistory(data.family_history || []);
-  
-    setPreTumorSize(data.preoperative?.tumor_size_mm || '');
-    setPreLymphEvaluation(data.preoperative?.clinical_N || '');
-  
-    const p = data.primary || {};
-    setReceivedNAC(data.primary?.received_NAC || false);
-    setNacRegimen(data.primary?.NAC_regimen || '');
-    setNacEndDate(data.primary?.NAC_end_date || '');
-    setSurgeryType(data.primary?.surgery_type || '');
-    setAxillarySurgery(data.primary?.axillary_surgery || '');
-    setSurgeryDate(data.primary?.surgery_date || '');
-    setPrimaryMarkers({
-      ER: data.primary?.ER || '',
-      PgR: data.primary?.PgR || '',
-      HER2: data.primary?.HER2 || '',
-      Ki67: data.primary?.Ki67?.toString() || ''
-    });
-    setPrimaryPdL1(data.primary?.PD_L1 || { sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' });
-    setTumorSize(data.primary?.tumor_size || '');
-    setInvasionChestWall(data.primary?.chest_wall || false);
-    setInvasionSkin(data.primary?.skin || false);
-    setInflammatory(data.primary?.inflammatory || false);
-    setIsYpTis(data.primary?.is_ypTis || false);
-    setPositiveNodes(data.primary?.positive_nodes || '');
-    setMarginStatus(data.primary?.margin_status || '');
-    setGrade(data.primary?.grade || '');
+      // 共通部分を読み込む
+      loadPatientDataCommon(data, {
+        setGender, setBirthDate, setIsPremenopausal,
+        setPastMedicalHistory, setMedications, setAllergies, setGbrca,
+        setFamilyHistory, setOtherInfo,
+        setSide: undefined, setRegions: undefined, setTumorSize, setLymphEvaluation,
+        setHistology, setIsInvasive, setGrade, setMarkers,
+        setUseAllred, setErPercent, setPgrPercent, setErPS, setErIS, setPgrPS, setPgrIS,
+      });
 
-    setAnthraResponse(data.primary?.anthra_response || '未治療');
-    setTaxaneResponse(data.primary?.taxane_response || '未治療');
+      const details = data.primary_tumor_info || {};
+      setReceivedNAC(details.received_NAC || false);
+      setNacRegimen(details.NAC_regimen || '');
+      setNacEndDate(details.NAC_end_date || null);
+      setAnthraResponse(details.anthra_response || '未治療');
+      setTaxaneResponse(details.taxane_response || '未治療');
+      setSurgeryType(details.surgery_type || '');
+      setAxillarySurgery(details.axillary_surgery || '');
+      setMargin(details.margin || '');
+      setMarginInvasion(details.margin_invasion || '');
+      setPathologicalT(details.pathological_T || '');
+      setChestWall(details.chest_wall || false);
+      setSkinInvasion(details.skin_invasion || false);
+      setInflammatory(details.inflammatory || false);
+      setPositiveNodes(parseInt(details.positive_nodes || '0', 10));
 
-    const a = data.allred || {};
-    setUseAllred(a.useAllred || false);
-    setErPercent(a.er_percent || '');
-    setPgrPercent(a.pgr_percent || '');
-    setErPS(a.er_ps || '');
-    setErIS(a.er_is || '');
-    setPgrPS(a.pgr_ps || '');
-    setPgrIS(a.pgr_is || '');
-  
-    setFrailty(data.frailty || false);
+      // 再発情報
+      setInterventions(data.interventions || []);
+      setSystemicTreatments(data.systemic_treatments || []);
+      setMetastasisSites(data.metastasis_sites || []);
+      setIsDeceased(data.is_deceased || false);
+      setDateOfDeath(data.date_of_death || null);
+      setCauseOfDeath(data.cause_of_death || '');
+      setVisceralCrisis(data.visceral_crisis || false);
 
-    const recurrence = data.recurrence || {};
-    setRecurrenceBiopsy(recurrence.biopsy || false);
-    setRecurrenceBiopsySite(recurrence.biopsy_site || '');
-    setRecurrenceBiopsyDate(recurrence.biopsy_date || '');
-    setMetastasisSites(recurrence.sites || {});
-    setOtherSiteDetail(recurrence.other_site_detail || '');
-    setRecurrenceMarkers({
-      ER: recurrence.markers?.ER || '',
-      PgR: recurrence.markers?.PgR || '',
-      HER2: recurrence.markers?.HER2 || '',
-      Ki67: recurrence.markers?.Ki67?.toString() || ''
-    });
-    setRecurrenceBiopsySite(data.recurrence?.biopsy_site || '');
-    setRecurrenceBiopsyDate(data.recurrence?.biopsy_date || '');
-    setMetastasisSites(data.recurrence?.sites || {});
-    setOtherSiteDetail(data.recurrence?.other_site_detail || '');
-    setRecurrenceMarkers({
-      ER: data.recurrence?.markers?.ER || '',
-      PgR: data.recurrence?.markers?.PgR || '',
-      HER2: data.recurrence?.markers?.HER2 || '',
-      Ki67: data.recurrence?.markers?.Ki67?.toString() || ''});
-
-      setTreatments(data.systemic_treatments?.length > 0 ? data.systemic_treatments : [
-        {
-          treatmentLineId: 1,
-          startDate: '',
-          endDate: '',
-          drugs: [],
-          outcome: '',
-          metastasisSites: {
-            local: false,
-            local_ln: false,
-            distant_ln: false,
-            lung: false,
-            liver: false,
-            bone: false,
-            brain: false,
-            other: false
-          },
-          otherSiteDetail: ''
-        }
-      ]);
-    setInterventions(data.interventions || []);
-
-    setLocalTherapy(data.local_therapy || {
-        surgery: false,
-        surgery_date: '',
-        surgery_note: '',
-        radiation: false,
-        radiation_date: '',
-        radiation_note: '',
-    });
-
-    setIsDeNovo(data.is_de_novo || false);
-    setVisceralCrisis(data.visceral_crisis || false);
-
-    setIsDeceased(data.is_deceased || false);
-    setDateOfDeath(data.date_of_death || '');
-    setCauseOfDeath(data.cause_of_death || '');
+    } catch (error) {
+      console.error("データ読み込み中にエラー:", error);
+      alert("データ取得に失敗しました");
+    }
   };
+
+  // データ取得関数
+  const fetchPatientData = async (id) => {
+    try {
+      const res = await api.get(`/api/patient/${id}/`);
+      if (res.status !== 200) {
+        alert(`患者データ取得失敗 (HTTP ${res.status})`);
+        return;
+      }
+      handlePatientDataLoad(res.data);
+    } catch (err) {
+      console.error("通信エラー:", err);
+      alert("通信エラーが発生しました");
+    }
+  };
+
+  // 患者IDがセットされたときにデータ読み込み
+  useEffect(() => {
+    if (patientId) {
+      fetchPatientData(patientId);
+    }
+  }, [patientId]);
 
 
 

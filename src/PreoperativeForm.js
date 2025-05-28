@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { fetchUnifiedPatientData } from './api';
 import BasicInfoPanel from './components/BasicInfoPanel';
 import ERPgRInputPanel from './components/ERPgRInputPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import api from './api';
-import { sendPreoperativeData } from './api';
 import { saveDoubtCase } from './utils/saveDoubtCase';
+import { fetchUnifiedPatientData, sendPreoperativeData } from './api';
+import { loadPatientDataCommon } from './utils/loadPatientData';
 
 function PreoperativeForm() {
   // 基本情報
@@ -54,93 +54,63 @@ function PreoperativeForm() {
     }
   };
 
+  // recommendationが更新されたらログ出力
   useEffect(() => {
     console.log("recommendation state updated:", recommendation);
   }, [recommendation]);
 
   const handlePatientDataLoad = async (data) => {
     try {
-      console.log("受信データ（API /api/patient/:id から）:", data);
-  
+      console.log("受信データ:", data);
       setIsUpdateMode(true);
-  
-      const basic = data.basic_info || {};
-      setAge(basic.age?.toString() || '');
-      setGender(basic.gender || '');
-      setBirthDate(basic.birth_date || '');
-      setIsPremenopausal(basic.is_premenopausal || false);
-      setPastMedicalHistory(basic.past_treatment || '');
-      setMedications(basic.medications || '');
-      setAllergies(basic.allergies || '');
-      setGbrca(basic.other_info?.gBRCA || '未検査');
-  
-      const fh = basic.family_history || {};
-      const selected = [];
-      if (fh.breast) selected.push("乳がん");
-      if (fh.ovary) selected.push("卵巣がん");
-      if (fh.peritoneum) selected.push("腹膜がん");
-      if (fh.pancreas) selected.push("膵臓がん");
-      if (fh.others) selected.push("その他");
-      setFamilyHistory(selected);
-  
-      // その他情報
-      setOtherInfo({
-        frailty: basic.other_info?.frailty ?? null,
-        notes: basic.other_info?.notes || '',
+
+      loadPatientDataCommon(data, {
+        setGender,
+        setBirthDate,
+        setIsPremenopausal,
+        setPastMedicalHistory,
+        setMedications,
+        setAllergies,
+        setGbrca,
+        setFamilyHistory,
+        setOtherInfo,
+        setSide,
+        setRegions,
+        setTumorSize,
+        setLymphEvaluation,
+        setHistology,
+        setIsInvasive,
+        setGrade,
+        setMarkers,
+        setUseAllred,
+        setErPercent,
+        setPgrPercent,
+        setErPS,
+        setErIS,
+        setPgrPS,
+        setPgrIS,
       });
-  
-      const details = data.primary || {};
-      setSide(details.side || '');
-      setRegions(details.regions || { A: false, B: false, C: false, D: false, E: false });
-      setTumorSize(details.tumor_size?.toString() || '');
-      setLymphEvaluation(details.lymph_evaluation || '');
-      setHistology(details.histology || '');
-      setIsInvasive(details.is_invasive || false);
-      setGrade(details.grade || '');
-  
-      const mk = details.markers || {};
-      setMarkers({
-        ER: mk.ER || '',
-        PgR: mk.PgR || '',
-        HER2: mk.HER2 || '',
-        Ki67: mk.Ki67?.toString() || '',
-      });
-  
-      setUseAllred(false); // デフォルト false
-      if (
-        'er_percent' in mk || 'pgr_percent' in mk ||
-        'er_ps' in mk || 'er_is' in mk || 'pgr_ps' in mk || 'pgr_is' in mk
-      ) {
-        setUseAllred(true);
-        setErPercent(mk.er_percent?.toString() || '');
-        setPgrPercent(mk.pgr_percent?.toString() || '');
-        setErPS(mk.er_ps?.toString() || '');
-        setErIS(mk.er_is?.toString() || '');
-        setPgrPS(mk.pgr_ps?.toString() || '');
-        setPgrIS(mk.pgr_is?.toString() || '');
-      }
-  
-    } catch (error) {
-      console.error("データ読み込み中にエラー発生:", error);
+
+    } catch (err) {
+      console.error("データ読込エラー:", err);
       alert("データ取得に失敗しました");
     }
   };
-  
 
-const fetchPatientData = async (id) => {
-  try {
-    const res = await api.get(`/api/patient/${id}/`);
-    if (res.status !== 200) {
-      alert(`患者データの取得に失敗しました (HTTP ${res.status})`);
-      return;
+  const fetchPatientData = async (id) => {
+    try {
+      const res = await api.get(`/api/patient/${id}/`);
+      if (res.status !== 200) {
+        alert(`患者データの取得に失敗しました (HTTP ${res.status})`);
+        return;
+      }
+      const json = res.data;
+      handlePatientDataLoad(json);
+    } catch (err) {
+      console.error("通信エラー:", err);
+      alert("通信エラーが発生しました");
     }
-    const json = res.data;  // axios なら .data にJSONが入ってる
-    handlePatientDataLoad(json);
-  } catch (err) {
-    console.error("通信エラー:", err);
-    alert("通信エラーが発生しました");
-  }
-};
+  };
   
 
   const handleRegionChange = (e) => {
@@ -163,6 +133,7 @@ const fetchPatientData = async (id) => {
     };
   
     const payload = {
+      patient_id: patientId,
       basic_info: {
         age: parseInt(age || '0', 10),
         gender,
@@ -206,7 +177,7 @@ const fetchPatientData = async (id) => {
       console.log("🧪 Final payload:", payload);
       setFormData(payload); // フォームデータを保存
     try {
-      const json = await sendPreoperativeData(payload, isUpdateMode, patientId);
+      const json = await sendPreoperativeData(payload, patientId);  // ← ✅ ここ修正
       if (json.recommendation) {
         setRecommendation(json.recommendation);
       } else if (json.error) {

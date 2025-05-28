@@ -8,7 +8,7 @@
   import api from './api';
   import { sendPostoperativeData } from './api';
   import { saveDoubtCase } from './utils/saveDoubtCase';
-
+  import { loadPatientDataCommon } from './utils/loadPatientData';
 
   function PostoperativeForm() {
     // 基本情報・既往・内服・家族歴
@@ -59,72 +59,59 @@
     const [doubtComment, setDoubtComment] = useState("");
     const [formData, setFormData] = useState(null);
 
-    const handlePatientDataLoad = (data) => {
-      console.log("📥 検索結果（patient data）:", data);
-      setIsUpdateMode(true);
-    
-      setAge(data.age || '');
-      setBirthDate(data.birth_date || '');
-      setGender(data.gender || '');
-      setIsPremenopausal(data.is_premenopausal || false);
-      setPastMedicalHistory(data.past_medical_history || '');
-      setMedications(data.medications || '');
-      setFamilyHistory(data.family_history || []);
-      setGbrca(data.gbrca || '');
-    
-      setPreTumorSize(data.preoperative?.tumor_size_mm || '');
-      setPreLymphEvaluation(data.preoperative?.clinical_N || '');
-    
-      const p = data.primary || {};
-      setReceivedNAC(p.received_NAC || false);
-      setNacRegimen(p.NAC_regimen || '');
-      setNacEndDate(p.NAC_end_date || '');
-      setSurgeryType(p.surgery_type || '');
-      setAxillarySurgery(p.axillary_surgery || '');
-      setSurgeryDate(p.surgery_date || '');
-      setPrimaryMarkers({
-        ER: p.ER || '',
-        PgR: p.PgR || '',
-        HER2: p.HER2 || '',
-        Ki67: p.Ki67?.toString() || ''
-      });
-      setPrimaryPdL1(p.PD_L1 || []);
-      setTumorSize(p.tumor_size || '');
-      setInvasionChestWall(p.chest_wall || false);
-      setInvasionSkin(p.skin || false);
-      setInflammatory(p.inflammatory || false);
-      setIsYpTis(p.is_ypTis || false);
-      setPositiveNodes(p.positive_nodes || '');
-      setMarginStatus(p.margin_status || '');
-      setGrade(p.grade || '');
-    
-      const a = data.allred || {};
-      setUseAllred(a.useAllred || false);
-      setErPercent(a.er_percent || '');
-      setPgrPercent(a.pgr_percent || '');
-      setErPS(a.er_ps || '');
-      setErIS(a.er_is || '');
-      setPgrPS(a.pgr_ps || '');
-      setPgrIS(a.pgr_is || '');
-    
-      setFrailty(data.frailty || false);
-    };
-
-    const fetchPatientData = async (id) => {
+    const handlePatientDataLoad = async (data) => {
       try {
-        const res = await api.get(`/api/patient/${id}/`);
-        if (res.status !== 200) {
-          alert(`患者データの取得に失敗しました (HTTP ${res.status})`);
-          return;
-        }
-        const json = res.data; // axios は .data に本体がある
-        handlePatientDataLoad(json);
-        setDataLoaded(true); // ← dataLoaded が使われているので
-      } catch (err) {
-        console.error("通信エラー:", err);
-        alert("通信エラーが発生しました");
-      }
-    };
+      console.log("受信データ（術後）:", data);
+      setIsUpdateMode(true);
+
+      loadPatientDataCommon(data, {
+        setGender,
+        setBirthDate,
+        setIsPremenopausal,
+        setPastMedicalHistory,
+        setMedications,
+        setAllergies,
+        setGbrca,
+        setFamilyHistory,
+        setOtherInfo,
+        setSide,
+        setRegions,
+        setTumorSize,
+        setLymphEvaluation,
+        setHistology,
+        setIsInvasive,
+        setGrade,
+        setMarkers,
+        setUseAllred,
+        setErPercent,
+        setPgrPercent,
+        setErPS,
+        setErIS,
+        setPgrPS,
+        setPgrIS,
+      });
+
+      // 術後特有の項目のセット
+      const primary = data.primary || {};
+      setReceivedNAC(primary.received_NAC || false);
+      setNACRegimen(primary.NAC_regimen || '');
+      setNACEndDate(primary.NAC_end_date || '');
+      setSurgeryType(primary.surgery_type || '');
+      setAxillarySurgery(primary.axillary_surgery || '');
+      setSurgeryDate(primary.surgery_date || '');
+      setPrimaryPdL1(primary.PD_L1 || '');
+      setInvasionChestWall(primary.chest_wall || false);
+      setInvasionSkin(primary.skin || false);
+      setInflammatory(primary.inflammatory || false);
+      setIsYpTis(primary.is_ypTis || false);
+      setPositiveNodes(primary.positive_nodes?.toString() || '');
+      setMarginStatus(primary.margin_status || '');
+
+    } catch (error) {
+      console.error("データ読み込みエラー（術後）:", error);
+      alert("データ取得に失敗しました");
+    }
+  };
 
 
     const handleResetForm = () => {
@@ -206,30 +193,29 @@
             notes: "",  // 必要なら備考も追加
           }
         },
-        primary_tumor_info: {
-          received_NAC: receivedNAC,
-          NAC_regimen: nacRegimen,
-          NAC_end_date: nacEndDate,
-          surgery_type: surgeryType,
-          axillary_surgery: axillarySurgery,
-          surgery_date: surgeryDate,
-          ER,
-          PgR,
-          HER2: primaryMarkers.HER2,
-          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
-          PD_L1: primaryPdL1,
-          tumor_size: parseFloat(tumorSize || '0'),
-          chest_wall: invasionChestWall,
-          skin: invasionSkin,
-          inflammatory,
-          is_ypTis: isYpTis,
-          positive_nodes: parseInt(positiveNodes || '0', 10),
-          margin_status: marginStatus,
-          grade,
-        },
+          primary_tumor_info: {
+            received_NAC: receivedNAC,
+            NAC_regimen: nacRegimen,
+            NAC_end_date: nacEndDate,
+            surgery_type: surgeryType,
+            axillary_surgery: axillarySurgery,
+            surgery_date: surgeryDate,
+            ER,
+            PgR,
+            HER2: primaryMarkers.HER2,
+            Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
+            PD_L1: primaryPdL1,
+            tumor_size: parseFloat(tumorSize || '0'),
+            chest_wall: invasionChestWall,
+            skin: invasionSkin,
+            inflammatory,
+            is_ypTis: isYpTis,
+            positive_nodes: parseInt(positiveNodes || '0', 10),
+            margin_status: marginStatus,
+            grade,
+          },
         systemic_treatments: [],
         interventions: [],
-        adjuvant_therapy: null
       };
 
     
@@ -239,7 +225,8 @@
 
 
       try {
-        const json = await sendPostoperativeData(payload, isUpdateMode, patientId);
+        const json = await sendPostoperativeData(payload, true, patientId);  // 更新モードの場合
+
 
         console.log("サーバー応答:", json);
         setFormData(payload); // フォームデータを保存
