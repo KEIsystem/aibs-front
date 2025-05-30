@@ -113,6 +113,59 @@ function PreoperativeForm() {
   };
   
 
+  const submitForm = async () => {
+    const isNewPatient = !patientId || patientId.trim() === "";
+
+    const formData = {
+      ...(isNewPatient ? {} : { patient_id: patientId }),
+      basic_info: {
+        age,
+        birth_date: birthDate,
+        gender,
+        is_premenopausal: isPremenopausal,
+        past_treatment: pastMedicalHistory,
+        medications,
+        allergies,
+        other_info: {
+          gBRCA: gbrca,
+          frailty
+        },
+        family_history: {
+          breast: familyHistory.includes("breast"),
+          ovary: familyHistory.includes("ovary"),
+          peritoneum: familyHistory.includes("peritoneum"),
+          pancreas: familyHistory.includes("pancreas"),
+          others: familyHistory.includes("others")
+        }
+      },
+      primary_tumor_info: {
+        // 必要に応じて構築
+      }
+    };
+
+    try {
+
+      console.log("🧪 Final payload:", formData);
+      // 保存処理（patient_idありの場合のみ）
+      if (!isNewPatient) {
+        await api.post('/api/patient/', formData);
+        console.log("保存完了");
+      } else {
+        console.log("patient_idなし：保存スキップ");
+      }
+
+      // 推論処理（共通）
+      const res = await api.post('/api/recommendation/preoperative/', formData);
+      setRecommendation(res.data);  // 表示用にセット
+      console.log("推論完了:", res.data);
+
+    } catch (error) {
+      console.error("送信エラー:", error);
+      alert("送信中にエラーが発生しました");
+    }
+  };
+
+
   const handleRegionChange = (e) => {
     const { name, checked } = e.target;
     setRegions({ ...regions, [name]: checked });
@@ -171,10 +224,6 @@ function PreoperativeForm() {
       }
     };
 
-      console.log("🧪 markers.HER2:", markers.HER2);  // ★追加
-      console.log("🧪 interpretedMarkers:", interpretedMarkers);  // ★追加
-      console.log("🧪 payload:", payload);  // ★追加
-      console.log("🧪 Final payload:", payload);
       setFormData(payload); // フォームデータを保存
     try {
       const json = await sendPreoperativeData(payload, patientId);  // ← ✅ ここ修正
