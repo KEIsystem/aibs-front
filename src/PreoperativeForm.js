@@ -146,12 +146,10 @@ function PreoperativeForm() {
     try {
 
       console.log("🧪 Final payload:", formData);
-      // 保存処理（patient_idありの場合のみ）
+      // 保存処理（patient_id があるなら URL に含めて叩く）
       if (!isNewPatient) {
-        await api.post('/api/patient/', formData);
+        await api.post(`/api/patient/${patientId}/`, formData);
         console.log("保存完了");
-      } else {
-        console.log("patient_idなし：保存スキップ");
       }
 
       // 推論処理（共通）

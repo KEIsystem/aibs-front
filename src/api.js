@@ -18,7 +18,11 @@ export function sendPreoperativeData(data, patientId = null) {
     basic_info: data.basic_info,
     primary_tumor_info: data.primary_tumor_info
   };
-  return api.post('/api/patient/', payload).then(res => res.data);
+  // patientId があれば ID 付き URL、なければ新規登録用 URL
+  const url = patientId
+    ? `/api/patient/${patientId}/`
+    : '/api/patient/';
+  return api.post(url, payload).then(res => res.data);
 }
 
 //
