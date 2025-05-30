@@ -12,17 +12,19 @@ const api = axios.create({
 
 //
 // ===== 術前フォーム送信 =====
-export function sendPreoperativeData(data, patientId = null) {
+export async function sendPreoperativeData(data, patientId = null) {
   const payload = {
-    patient_id: patientId,
+    ...(patientId ? { patient_id: patientId } : {}),
     basic_info: data.basic_info,
     primary_tumor_info: data.primary_tumor_info
   };
   // patientId があれば ID 付き URL、なければ新規登録用 URL
-  const url = patientId
-    ? `/api/patient/${patientId}/`
-    : '/api/patient/';
-  return api.post(url, payload).then(res => res.data);
+
+  if (patientId) {
+    await api.post('/api/patient/', payload);
+  }
+   const res = await api.post('/api/recommendation/preoperative/', payload);
+  return res.data;
 }
 
 //
