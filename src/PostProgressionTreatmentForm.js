@@ -262,78 +262,126 @@ export default function PostProgressionTreatmentForm() {
   };
 
   // ─── ④ フォームリセット ───────────────────────────────────────
-  const resetForm = () => {
-    setAge(''); setBirthDate(''); setGender('');
-    setIsPremenopausal(false);
-    setPastMedicalHistory(''); setMedications(''); setAllergies('');
-    setGbrca('未検査'); setFamilyHistory([]);
-    setPreTumorSize(''); setPreLymphEvaluation(''); setFrailty(false);
-    setReceivedNAC(false); setNacRegimen(''); setNacEndDate('');
-    setSurgeryType(''); setAxillarySurgery(''); setSurgeryDate('');
-    setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
-    setPrimaryPdL1({ sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' });
-    setTumorSize(''); setInvasionChestWall(false); setInvasionSkin(false);
-    setInflammatory(false); setIsYpTis(false); setPositiveNodes(''); setMarginStatus('');
-    setGrade(''); setAnthraResponse('未治療'); setTaxaneResponse('未治療');
+  const handleResetForm = () => {
+      // 患者 ID と更新モードフラグをリセット
+      setPatientId('');
+      setIsUpdateMode(false);
+      setDataLoaded(false);
 
-    setRecurrenceDate('');
-    setMetastasisSites({
-      local: false, local_ln: false, distant_ln: false,
-      lung: false, liver: false, bone: false, brain: false, other: false
-    });
-    setOtherSiteDetail(''); setRecurrenceBiopsy(false); setRecurrenceBiopsySite('');
-    setRecurrenceBiopsyDate(''); setRecurrenceMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
-    setCopyPrimaryToRecurrence(false);
-    setUseAllred(false); setErPercent(''); setPgrPercent(''); setErPS(''); setErIS('');
-    setPgrPS(''); setPgrIS(''); setSp142('none'); setCps('none'); setMsi('none');
-    setMmr('none');
+      // Basic Info
+      setAge('');
+      setBirthDate('');
+      setGender('');
+      setIsPremenopausal(false);
+      setPastMedicalHistory('');
+      setMedications('');
+      setAllergies('');
+      setGbrca('未検査');
+      setFamilyHistory([]);
 
-    setFoundationStatus("未検査"); setFoundationDate(''); setFoundationComment('');
-    setLocalTherapy({
-      surgery: false, surgery_date: '', surgery_note: '',
-      radiation: false, radiation_date: '', radiation_note: ''
-    });
+      // Preoperative Info (CPS+EG)
+      setPreTumorSize('');
+      setPreLymphEvaluation('');
+      setFrailty(false);
+      setIsDeNovo(false);
 
-    setTreatments([{
-      treatmentLineId: 1,
-      startDate: '',
-      endDate: '',
-      drugs: [],
-      outcome: '',
-      metastasisSites: {
+      // PrimaryTumorInfoPanel
+      setReceivedNAC(false);
+      setNacRegimen('');
+      setNacEndDate('');
+      setSurgeryType('');
+      setAxillarySurgery('');
+      setSurgeryDate('');
+      setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+      setPrimaryPdL1({ sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' });
+      setTumorSize('');
+      setInvasionChestWall(false);
+      setInvasionSkin(false);
+      setInflammatory(false);
+      setIsYpTis(false);
+      setPositiveNodes('');
+      setMarginStatus('');
+      setGrade('');
+      setAnthraResponse('未治療');
+      setTaxaneResponse('未治療');
+
+      // Recurrence/Biopsy
+      setRecurrenceDate('');
+      setMetastasisSites({
         local: false, local_ln: false, distant_ln: false,
         lung: false, liver: false, bone: false, brain: false, other: false
-      },
-      otherSiteDetail: ''
-    }]);
-    setInterventions([{
-      biopsy: false,
-      biopsy_site: '',
-      biopsy_date: '',
-      markers: { ER: '', PgR: '', HER2: '', Ki67: '', sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' },
-      useAllred: false,
-      erPercent: '',
-      pgrPercent: '',
-      erPS: '',
-      erIS: '',
-      pgrPS: '',
-      pgrIS: '',
-      surgery: false,
-      surgery_date: '',
-      surgery_note: '',
-      radiation: false,
-      radiation_date: '',
-      radiation_note: ''
-    }]);
+      });
+      setOtherSiteDetail('');
+      setRecurrenceBiopsy(false);
+      setRecurrenceBiopsySite('');
+      setRecurrenceBiopsyDate('');
+      setRecurrenceMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+      setCopyPrimaryToRecurrence(false);
+      setUseAllred(false);
+      setErPercent('');
+      setPgrPercent('');
+      setErPS('');
+      setErIS('');
+      setPgrPS('');
+      setPgrIS('');
+      setSp142('none');
+      setCps('none');
+      setMsi('none');
+      setMmr('none');
 
-    setVisceralCrisis(false); setIsDeceased(false);
-    setDateOfDeath(''); setCauseOfDeath('');
-    setRecommendation(null);
-    setCopyPrimaryToRecurrence(false);
-    setIsUpdateMode(false);
-    setDataLoaded(false);
-    setPatientId('');
-  };
+      // Foundation One
+      setFoundationStatus("未検査");
+      setFoundationDate('');
+      setFoundationComment('');
+
+      // Local Therapy
+      setLocalTherapy({
+        surgery: false, surgery_date: '', surgery_note: '',
+        radiation: false, radiation_date: '', radiation_note: ''
+      });
+
+      // 全身治療歴・介入
+      setTreatments([{
+        treatmentLineId: 1,
+        startDate: '',
+        endDate: '',
+        drugs: [],
+        outcome: '',
+        metastasisSites: {
+          local: false, local_ln: false, distant_ln: false,
+          lung: false, liver: false, bone: false, brain: false, other: false
+        },
+        otherSiteDetail: ''
+      }]);
+      setInterventions([{
+        biopsy: false,
+        biopsy_site: '',
+        biopsy_date: '',
+        markers: { ER: '', PgR: '', HER2: '', Ki67: '', sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' },
+        useAllred: false,
+        erPercent: '',
+        pgrPercent: '',
+        erPS: '',
+        erIS: '',
+        pgrPS: '',
+        pgrIS: '',
+        surgery: false,
+        surgery_date: '',
+        surgery_note: '',
+        radiation: false,
+        radiation_date: '',
+        radiation_note: ''
+      }]);
+
+      // その他
+      setVisceralCrisis(false);
+      setIsDeceased(false);
+      setDateOfDeath('');
+      setCauseOfDeath('');
+      setRecommendation(null);
+      setDoubtComment('');
+      setFormData(null);
+    };
 
   // ─── ⑤ Submit 処理 ───────────────────────────────────────────
   const handleSubmit = async (e) => {

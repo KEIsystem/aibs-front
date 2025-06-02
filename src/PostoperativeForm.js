@@ -134,11 +134,13 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
   };
 
   // ─── ④ フォームリセット ────────────────────────────────────────────────
-  const handleResetForm = () => {
-    setRecommendation(null);
+   const handleResetForm = () => {
+    // 患者 ID と更新モードフラグをリセット
+    setPatientId('');
     setIsUpdateMode(false);
     setDataLoaded(false);
-    setPatientId('');
+
+    // BasicInfo
     setBirthDate('');
     setAge('');
     setGender('');
@@ -147,8 +149,8 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
     setMedications('');
     setFamilyHistory([]);
     setGbrca('');
-    setPreTumorSize('');
-    setPreLymphEvaluation('');
+
+    // PrimaryTumorInfoPanel
     setReceivedNAC(false);
     setNacRegimen('');
     setNacEndDate('');
@@ -172,7 +174,14 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
     setErIS('');
     setPgrPS('');
     setPgrIS('');
+
+    // その他
+    setPreTumorSize('');
+    setPreLymphEvaluation('');
     setFrailty(false);
+    setRecommendation(null);
+    setDoubtComment('');
+    setFormData(null);
   };
 
   // ─── ⑤ フォーム送信 ───────────────────────────────────────────────────

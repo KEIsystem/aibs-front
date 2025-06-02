@@ -64,6 +64,42 @@ export default function PreoperativeForm() {
     }
   };
 
+  const handleResetForm = () => {
+    // 患者ID を空にすれば isUpdateMode も false になり
+    // 新規登録モードに戻ります。必要なら各フィールドもクリアしてください。
+    setPatientId('');
+    setIsUpdateMode(false);
+    // もしフォーム入力値もリセットしたい場合は、他の state もクリアします
+    setBirthDate('');
+    setAge('');
+    setGender('');
+    setIsPremenopausal(false);
+    setPastMedicalHistory('');
+    setMedications('');
+    setFamilyHistory([]);
+    setGbrca('未検査');
+    setAllergies('');
+    setSide('');
+    setRegions({ A: false, B: false, C: false, D: false, E: false });
+    setTumorSize('');
+    setLymphEvaluation('');
+    setHistology('');
+    setIsInvasive(false);
+    setGrade('');
+    setMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+    setUseAllred(false);
+    setErPercent('');
+    setPgrPercent('');
+    setErPS('');
+    setErIS('');
+    setPgrPS('');
+    setPgrIS('');
+    setOtherInfo({ frailty: null, notes: '' });
+    setRecommendation(null);
+    setDoubtComment('');
+    setFormData(null);
+  };
+
   // ─── ③ 既存データを各 useState にセット ─────────────────────────────
   const handlePatientDataLoad = (data) => {
     try {
