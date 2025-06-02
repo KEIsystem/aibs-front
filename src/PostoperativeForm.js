@@ -253,7 +253,7 @@
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onSearch={fetchPatientData}
+          onSearch={fetchUnifiedPatientData}
           onReset={handleResetForm}
         />
                 
