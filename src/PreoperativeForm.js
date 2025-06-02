@@ -7,6 +7,7 @@ import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
 import { fetchUnifiedPatientData, sendPreoperativeData } from './api';
 import { saveDoubtCase } from './utils/saveDoubtCase';
 import { loadPatientDataCommon } from './utils/loadPatientData';
+import api from './api';
 
 export default function PreoperativeForm() {
   // ─── ① フォーム用 state ───────────────────────────────────────────
@@ -42,24 +43,26 @@ export default function PreoperativeForm() {
   const [otherInfo, setOtherInfo] = useState({ frailty: null, notes: '' });
   const [recommendation, setRecommendation] = useState(null);
 
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [formData, setFormData] = useState(null);
   const [doubtComment, setDoubtComment] = useState('');
 
-  // ─── ② patientId が変わったら一度だけデータ取得 ────────────────────────
-  useEffect(() => {
-    if (!patientId) return;
-
-    fetchUnifiedPatientData(patientId)
-      .then((data) => {
-        handlePatientDataLoad(data);
-        setIsUpdateMode(true);
-      })
-      .catch((err) => {
-        console.error('患者データ取得エラー:', err);
-        alert('患者データの取得に失敗しました');
-      });
-  }, [patientId]);
+  // 明示的に「検索」ボタンで呼ぶ想定のデータ取得関数
+  const fetchPatientData = async (id) => {
+    try {
+      const res = await api.get(`/api/patient/${id}/`);
+      // 患者データが見つかったので「更新モード」に移行
+      handlePatientDataLoad(res.data);
+      setDataLoaded(true);
+      setIsUpdateMode(true);
+    } catch (err) {
+      console.warn('患者データが見つかりませんでした:', err);
+      // 404 などで見つからなかったら「新規登録モード」のまま（isUpdateMode=false）
+      setIsUpdateMode(false);
+      // （必要ならここで「新規登録扱いになります」などのアラートを出してもOK）
+    }
+  };
 
   // ─── ③ 既存データを各 useState にセット ─────────────────────────────
   const handlePatientDataLoad = (data) => {
@@ -174,19 +177,24 @@ export default function PreoperativeForm() {
     setFormData(payload);
 
     try {
-      // sendPreoperativeData は patientId が空なら新規POST、なければ PUT で送る仕様
-      const json = await sendPreoperativeData(payload, patientId);
-      console.log('推論完了:', json);
-
-      if (json.recommendation) {
-        // レスポンスの中に recommendation キーがあれば画面表示用にセット
-        setRecommendation(json.recommendation);
-      } else if (json.error) {
-        alert(`エラー：${json.error}`);
+      let result;
+      if (isUpdateMode) {
+        // 更新モード：PUT /api/preoperative/<patientId>/
+        result = await updatePreoperative(patientId, payload);
+      } else {
+        // 新規登録モード：POST /api/preoperative/
+        result = await createPreoperative(payload);
+        // （もしバックエンドから返ってくる新しい patient_id を使いたいならここで setPatientId(result.patient_id) してもOK）
+        setIsUpdateMode(true);  // 以降は更新モードに
       }
-    } catch (err) {
-      console.error('送信エラー:', err);
-      alert('送信中にエラーが発生しました');
+
+      console.log('サーバー応答:', result);
+      setRecommendation(result);
+      setFormData(payload);
+      setDataLoaded(true);
+    } catch (error) {
+      console.error(error);
+      alert('通信エラー：' + error.message);
     }
   };
 
@@ -197,7 +205,8 @@ export default function PreoperativeForm() {
       <PatientIdSearchPanel
         patientId={patientId}
         setPatientId={setPatientId}
-        onSearch={(id) => setPatientId(id)}
+        onSearch={fetchPatientData}
+        onReset={handleResetForm}
       />
 
       <form className="p-4" onSubmit={handleSubmit}>

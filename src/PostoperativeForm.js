@@ -1,5 +1,6 @@
   // PostoperativeForm.js 完全版
 import React, { useState, useEffect } from 'react';
+import api from './api'
 import {
   createPostoperative,
   updatePostoperative,
@@ -61,21 +62,21 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
   const [doubtComment, setDoubtComment] = useState('');
   const [formData, setFormData] = useState(null);
 
-  // ─── ② useEffect で「ID変化 → データ取得 → 各 state にセット」 ─────────
-  useEffect(() => {
-    if (!patientId) return;
-
-    // fetchUnifiedPatientData でも fetchPatientData でも OK
-    fetchUnifiedPatientData(patientId)
-      .then((data) => {
-        handlePatientDataLoad(data);
-        setDataLoaded(true);
-      })
-      .catch((err) => {
-        console.error('患者データ取得エラー:', err);
-        alert('患者データの取得に失敗しました');
-      });
-  }, [patientId]);
+  // ─── 明示的に「検索」ボタンで呼ぶ想定のデータ取得関数 ─────────
+  const fetchPatientData = async (id) => {
+    try {
+      const res = await api.get(`/api/patient/${id}/`);
+      // 既存レコードが見つかったので「更新モード」に移行
+      handlePatientDataLoad(res.data);
+      setDataLoaded(true);
+      setIsUpdateMode(true);
+    } catch (err) {
+      console.warn('患者データが見つかりませんでした:', err);
+      // 404 などで見つからなかったら「新規登録モード」のまま（isUpdateMode=false）
+      setIsUpdateMode(false);
+      // 必要ならここで「新規登録扱いになります」などのアラートを出しても良い
+    }
+  };
 
   // ─── ③ handlePatientDataLoad をすべて個別セットに書き直し ─────────────────
   const handlePatientDataLoad = (data) => {
@@ -229,8 +230,16 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
     };
 
     try {
-      // 新規 or 更新 を自動的に振り分ける sendPostoperativeData を呼び出し
-      const result = await sendPostoperativeData(payload, patientId);
+      let result;
+      if (isUpdateMode && patientId) {
+        // 更新モード：PUT /api/postoperative/<patientId>/
+        result = await updatePostoperative(patientId, payload);
+      } else {
+        // 新規登録モード：POST /api/postoperative/
+        result = await createPostoperative(payload);
+        // （必要なら result.patient_id を受け取って setPatientId しても OK）
+        setIsUpdateMode(true);  // 新規登録したら次からは更新モードにする
+      }
       console.log('サーバー応答:', result);
       setRecommendation(result);
       setFormData(payload);
@@ -250,7 +259,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onSearch={(id) => setPatientId(id)}
+          onSearch={fetchPatientData} 
           onReset={handleResetForm}
         />
                 
