@@ -1,249 +1,246 @@
   // PostoperativeForm.js 完全版
-  import React, { useState } from 'react';
-  import { fetchUnifiedPatientData } from './api';
-  import BasicInfoPanel from './components/BasicInfoPanel';
-  import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
-  import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
-  import PatientIdSearchPanel from './components/PatientIdSearchPanel';
-  import api from './api';
-  import { sendPostoperativeData } from './api';
-  import { saveDoubtCase } from './utils/saveDoubtCase';
-  import { loadPatientDataCommon } from './utils/loadPatientData';
+import React, { useState, useEffect } from 'react';
+import {
+  createPostoperative,
+  updatePostoperative,
+  fetchPatientData,
+  fetchUnifiedPatientData, sendPostoperativeData   // ← 追加必須！
+} from './api';
+import BasicInfoPanel from './components/BasicInfoPanel';
+import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
+import PatientIdSearchPanel from './components/PatientIdSearchPanel';
+import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
+// import { saveDoubtCase } from './utils/saveDoubtCase';
+import { saveDoubtCase } from './utils/saveDoubtCase'; // 使うなら残す
+// import { loadPatientDataCommon } from './utils/loadPatientData'; // 今回は使わない想定
 
-  function PostoperativeForm() {
-    // 基本情報・既往・内服・家族歴
-    const [patientId, setPatientId] = useState('');
-    const [dataLoaded, setDataLoaded] = useState(false);
-    const [birthDate, setBirthDate] = useState('');
-    const [age, setAge] = useState('');
-    const [gender, setGender] = useState('');
-    const [pastMedicalHistory, setPastMedicalHistory] = useState('');
-    const [medications, setMedications] = useState('');
-    const [familyHistory, setFamilyHistory] = useState([]);
-    const [gbrca, setGbrca] = useState('');
-    const [isPremenopausal, setIsPremenopausal] = useState(false);
-    const [preTumorSize, setPreTumorSize] = useState('');
-    const [preLymphEvaluation, setPreLymphEvaluation] = useState('');
-   
-    // PrimariTumorInfoPanel
-    const [receivedNAC, setReceivedNAC] = useState(false);
-    const [nacRegimen, setNacRegimen] = useState('');
-    const [nacEndDate, setNacEndDate] = useState('');  // ← 追加
-    const [surgeryType, setSurgeryType] = useState('');
-    const [axillarySurgery, setAxillarySurgery] = useState('');
-    const [surgeryDate, setSurgeryDate] = useState(''); // ← 追加
-    const [primaryMarkers, setPrimaryMarkers] = useState({ ER: '', PgR: '', HER2: '', Ki67: '' }); // ← markers を置換
-    const [primaryPdL1, setPrimaryPdL1] = useState([]); // ← PD-L1対応
-    const [tumorSize, setTumorSize] = useState('');
-    const [invasionChestWall, setInvasionChestWall] = useState(false);
-    const [invasionSkin, setInvasionSkin] = useState(false);
-    const [inflammatory, setInflammatory] = useState(false);
-    const [isYpTis, setIsYpTis] = useState(false);
-    const [positiveNodes, setPositiveNodes] = useState('');
-    const [marginStatus, setMarginStatus] = useState('');
-    const [grade, setGrade] = useState('');
-    const [useAllred, setUseAllred] = useState(false);
-    const [erPercent, setErPercent] = useState('');
-    const [pgrPercent, setPgrPercent] = useState('');
-    const [erPS, setErPS] = useState('');
-    const [erIS, setErIS] = useState('');
-    const [pgrPS, setPgrPS] = useState('');
-    const [pgrIS, setPgrIS] = useState('');
+export default function PostoperativeForm({ patientId: initialPatientId }) {
+  // ─── ① state 宣言 ──────────────────────────────────────────────────────
+  const [patientId, setPatientId] = useState(initialPatientId || '');
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [birthDate, setBirthDate] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const [pastMedicalHistory, setPastMedicalHistory] = useState('');
+  const [medications, setMedications] = useState('');
+  const [familyHistory, setFamilyHistory] = useState([]);
+  const [gbrca, setGbrca] = useState('');
+  const [isPremenopausal, setIsPremenopausal] = useState(false);
+  const [preTumorSize, setPreTumorSize] = useState('');
+  const [preLymphEvaluation, setPreLymphEvaluation] = useState('');
 
-    // その他
-    const [frailty, setFrailty] = useState(false);
-    const [recommendation, setRecommendation] = useState(null);
+  // PrimariTumorInfoPanel 用
+  const [receivedNAC, setReceivedNAC] = useState(false);
+  const [nacRegimen, setNacRegimen] = useState('');
+  const [nacEndDate, setNacEndDate] = useState(''); 
+  const [surgeryType, setSurgeryType] = useState('');
+  const [axillarySurgery, setAxillarySurgery] = useState('');
+  const [surgeryDate, setSurgeryDate] = useState('');
+  const [primaryMarkers, setPrimaryMarkers] = useState({ ER: '', PgR: '', HER2: '', Ki67: '' });
+  const [primaryPdL1, setPrimaryPdL1] = useState([]);
+  const [tumorSize, setTumorSize] = useState('');
+  const [invasionChestWall, setInvasionChestWall] = useState(false);
+  const [invasionSkin, setInvasionSkin] = useState(false);
+  const [inflammatory, setInflammatory] = useState(false);
+  const [isYpTis, setIsYpTis] = useState(false);
+  const [positiveNodes, setPositiveNodes] = useState('');
+  const [marginStatus, setMarginStatus] = useState('');
+  const [grade, setGrade] = useState('');
+  const [useAllred, setUseAllred] = useState(false);
+  const [erPercent, setErPercent] = useState('');
+  const [pgrPercent, setPgrPercent] = useState('');
+  const [erPS, setErPS] = useState('');
+  const [erIS, setErIS] = useState('');
+  const [pgrPS, setPgrPS] = useState('');
+  const [pgrIS, setPgrIS] = useState('');
 
-    const [isUpdateMode, setIsUpdateMode] = useState(false);
+  // その他
+  const [frailty, setFrailty] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [doubtComment, setDoubtComment] = useState('');
+  const [formData, setFormData] = useState(null);
 
-    const [doubtComment, setDoubtComment] = useState("");
-    const [formData, setFormData] = useState(null);
+  // ─── ② useEffect で「ID変化 → データ取得 → 各 state にセット」 ─────────
+  useEffect(() => {
+    if (!patientId) return;
 
-    const handlePatientDataLoad = async (data) => {
-      try {
-      console.log("受信データ（術後）:", data);
+    // fetchUnifiedPatientData でも fetchPatientData でも OK
+    fetchUnifiedPatientData(patientId)
+      .then((data) => {
+        handlePatientDataLoad(data);
+        setDataLoaded(true);
+      })
+      .catch((err) => {
+        console.error('患者データ取得エラー:', err);
+        alert('患者データの取得に失敗しました');
+      });
+  }, [patientId]);
+
+  // ─── ③ handlePatientDataLoad をすべて個別セットに書き直し ─────────────────
+  const handlePatientDataLoad = (data) => {
+    try {
+      console.log('受信データ（術後）:', data);
       setIsUpdateMode(true);
 
-      loadPatientDataCommon(data, {
-        setGender,
-        setBirthDate,
-        setIsPremenopausal,
-        setPastMedicalHistory,
-        setMedications,
-        setAllergies,
-        setGbrca,
-        setFamilyHistory,
-        setOtherInfo,
-        setSide,
-        setRegions,
-        setTumorSize,
-        setLymphEvaluation,
-        setHistology,
-        setIsInvasive,
-        setGrade,
-        setMarkers,
-        setUseAllred,
-        setErPercent,
-        setPgrPercent,
-        setErPS,
-        setErIS,
-        setPgrPS,
-        setPgrIS,
-      });
+      // ─── BasicInfo を個別セット ─────────────────
+      const basic = data.basic_info || {};
+      setBirthDate(basic.birth_date || '');
+      setAge(basic.age?.toString() || '');
+      setGender(basic.gender || '');
+      setIsPremenopausal(basic.is_premenopausal || false);
+      setPastMedicalHistory(basic.past_treatment || '');
+      setMedications(basic.medications || '');
+      setFamilyHistory(basic.family_history_list || []); // 形に合わせる
+      setGbrca(basic.other_info?.gBRCA || '');
 
-      // 術後特有の項目のセット
-      const primary = data.primary || {};
+      // ─── PrimaryTumorInfo を個別セット ────────────
+      const primary = data.primary_tumor_info || {};
       setReceivedNAC(primary.received_NAC || false);
-      setNACRegimen(primary.NAC_regimen || '');
-      setNACEndDate(primary.NAC_end_date || '');
+      setNacRegimen(primary.NAC_regimen || '');
+      setNacEndDate(primary.NAC_end_date || '');
       setSurgeryType(primary.surgery_type || '');
       setAxillarySurgery(primary.axillary_surgery || '');
       setSurgeryDate(primary.surgery_date || '');
-      setPrimaryPdL1(primary.PD_L1 || '');
+      setPrimaryMarkers({
+        ER: primary.ER || '',
+        PgR: primary.PgR || '',
+        HER2: primary.HER2 || '',
+        Ki67: primary.Ki67?.toString() || '',
+      });
+      setPrimaryPdL1(primary.PD_L1 || []);
+      setTumorSize(primary.tumor_size?.toString() || '');
       setInvasionChestWall(primary.chest_wall || false);
       setInvasionSkin(primary.skin || false);
       setInflammatory(primary.inflammatory || false);
       setIsYpTis(primary.is_ypTis || false);
       setPositiveNodes(primary.positive_nodes?.toString() || '');
       setMarginStatus(primary.margin_status || '');
+      setGrade(primary.grade || '');
+      setUseAllred(primary.use_allred || false);
+      setErPercent(primary.er_percent?.toString() || '');
+      setPgrPercent(primary.pgr_percent?.toString() || '');
+      setErPS(primary.er_ps || '');
+      setErIS(primary.er_is || '');
+      setPgrPS(primary.pgr_ps || '');
+      setPgrIS(primary.pgr_is || '');
 
+      // … 必要な残りのフィールドがあれば同様に here で書く …
     } catch (error) {
-      console.error("データ読み込みエラー（術後）:", error);
-      alert("データ取得に失敗しました");
+      console.error('データ読み込みエラー（術後）:', error);
+      alert('データ取得に失敗しました');
     }
   };
 
+  // ─── ④ フォームリセット ────────────────────────────────────────────────
+  const handleResetForm = () => {
+    setRecommendation(null);
+    setIsUpdateMode(false);
+    setDataLoaded(false);
+    setPatientId('');
+    setBirthDate('');
+    setAge('');
+    setGender('');
+    setIsPremenopausal(false);
+    setPastMedicalHistory('');
+    setMedications('');
+    setFamilyHistory([]);
+    setGbrca('');
+    setPreTumorSize('');
+    setPreLymphEvaluation('');
+    setReceivedNAC(false);
+    setNacRegimen('');
+    setNacEndDate('');
+    setSurgeryType('');
+    setAxillarySurgery('');
+    setSurgeryDate('');
+    setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
+    setPrimaryPdL1([]);
+    setTumorSize('');
+    setInvasionChestWall(false);
+    setInvasionSkin(false);
+    setInflammatory(false);
+    setIsYpTis(false);
+    setPositiveNodes('');
+    setMarginStatus('');
+    setGrade('');
+    setUseAllred(false);
+    setErPercent('');
+    setPgrPercent('');
+    setErPS('');
+    setErIS('');
+    setPgrPS('');
+    setPgrIS('');
+    setFrailty(false);
+  };
 
-    const handleResetForm = () => {
-          setRecommendation(null);
-          setIsUpdateMode(false);
-          setDataLoaded(false);
+  // ─── ⑤ フォーム送信 ───────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-          // 基本情報・既往・内服・家族歴
-          setBirthDate('');
-          setAge('');
-          setGender('');
-          setIsPremenopausal(false);
-          setPastMedicalHistory('');
-          setMedications('');
-          setFamilyHistory([]);
-          setGbrca('');
+    const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
+    const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
 
-          // 術前情報（CPS+EG用）
-          setPreTumorSize('');
-          setPreLymphEvaluation('');
-
-          // PrimaryTumorInfoPanel 情報
-          setReceivedNAC(false);
-          setNacRegimen('');
-          setNacEndDate('');
-          setSurgeryType('');
-          setAxillarySurgery('');
-          setSurgeryDate('');
-          setPrimaryMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
-          setPrimaryPdL1([]);
-          setTumorSize('');
-          setInvasionChestWall(false);
-          setInvasionSkin(false);
-          setInflammatory(false);
-          setIsYpTis(false);
-          setPositiveNodes('');
-          setMarginStatus('');
-          setGrade('');
-          setUseAllred(false);
-          setErPercent('');
-          setPgrPercent('');
-          setErPS('');
-          setErIS('');
-          setPgrPS('');
-          setPgrIS('');
-
-          // その他
-          setFrailty(false);
-        };
-
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      console.log(" 送信ボタンがクリックされました");
-    
-      const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
-      const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
-    
-      // Djangoが求める構造に変換
-      const payload = {
-        basic_info: {
-          patient_id: patientId,
-          birth_date: birthDate,
-          age: parseInt(age || '0', 10),
-          gender,
-          is_premenopausal: isPremenopausal,
-          past_treatment: pastMedicalHistory,
-          medications,
-          family_history: {
-            breast: familyHistory.some(f => f.disease === "乳がん"),
-            ovary: familyHistory.some(f => f.disease === "卵巣がん"),
-            peritoneum: familyHistory.some(f => f.disease === "腹膜がん"),
-            pancreas: familyHistory.some(f => f.disease === "膵臓がん"),
-            others: familyHistory.some(f => f.disease === "その他")
-                  },
-          other_info: {
-            gBRCA: gbrca,
-            frailty: frailty,
-            notes: "",  // 必要なら備考も追加
-          }
+    const payload = {
+      basic_info: {
+        patient_id: patientId,
+        birth_date: birthDate,
+        age: parseInt(age || '0', 10),
+        gender,
+        is_premenopausal: isPremenopausal,
+        past_treatment: pastMedicalHistory,
+        medications,
+        family_history: {
+          breast: familyHistory.some((f) => f.disease === '乳がん'),
+          ovary: familyHistory.some((f) => f.disease === '卵巣がん'),
+          peritoneum: familyHistory.some((f) => f.disease === '腹膜がん'),
+          pancreas: familyHistory.some((f) => f.disease === '膵臓がん'),
+          others: familyHistory.some((f) => f.disease === 'その他'),
         },
-          primary_tumor_info: {
-            received_NAC: receivedNAC,
-            NAC_regimen: nacRegimen,
-            NAC_end_date: nacEndDate,
-            surgery_type: surgeryType,
-            axillary_surgery: axillarySurgery,
-            surgery_date: surgeryDate,
-            ER,
-            PgR,
-            HER2: primaryMarkers.HER2,
-            Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
-            PD_L1: primaryPdL1,
-            tumor_size: parseFloat(tumorSize || '0'),
-            chest_wall: invasionChestWall,
-            skin: invasionSkin,
-            inflammatory,
-            is_ypTis: isYpTis,
-            positive_nodes: parseInt(positiveNodes || '0', 10),
-            margin_status: marginStatus,
-            grade,
-          },
-        systemic_treatments: [],
-        interventions: [],
-      };
-
-    
-      console.log(" payload:", payload);
-    
-      console.log(" 送信前 payload 内容:", JSON.stringify(payload, null, 2));
-
-
-      try {
-        const json = await sendPostoperativeData(payload, true, patientId);  // 更新モードの場合
-
-
-        console.log("サーバー応答:", json);
-        setFormData(payload); // フォームデータを保存
-
-        if (
-          json.recommendation &&
-          (json.recommendation["IV Chemo"] || json.recommendation["RTx"] || json.recommendation["補助療法"])
-        ) {
-          setRecommendation(json.recommendation);
-        } else if (json.error) {
-          alert("エラー：" + json.error);
-        }
-
-      } catch (error) {
-        alert("通信エラー：" + error.message);
-      }
+        other_info: {
+          gBRCA: gbrca,
+          frailty: frailty,
+          notes: '',
+        },
+      },
+      primary_tumor_info: {
+        received_NAC: receivedNAC,
+        NAC_regimen: nacRegimen,
+        NAC_end_date: nacEndDate,
+        surgery_type: surgeryType,
+        axillary_surgery: axillarySurgery,
+        surgery_date: surgeryDate,
+        ER,
+        PgR,
+        HER2: primaryMarkers.HER2,
+        Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
+        PD_L1: primaryPdL1,
+        tumor_size: parseFloat(tumorSize || '0'),
+        chest_wall: invasionChestWall,
+        skin: invasionSkin,
+        inflammatory,
+        is_ypTis: isYpTis,
+        positive_nodes: parseInt(positiveNodes || '0', 10),
+        margin_status: marginStatus,
+        grade,
+      },
+      systemic_treatments: [],
+      interventions: [],
     };
+
+    try {
+      // 新規 or 更新 を自動的に振り分ける sendPostoperativeData を呼び出し
+      const result = await sendPostoperativeData(payload, patientId);
+      console.log('サーバー応答:', result);
+      setRecommendation(result);
+      setFormData(payload);
+      setDataLoaded(true);
+    } catch (error) {
+      console.error(error);
+      alert('通信エラー：' + error.message);
+    }
+  };
+
 
     return (  
       
@@ -253,7 +250,7 @@
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onSearch={fetchUnifiedPatientData}
+          onSearch={(id) => setPatientId(id)}
           onReset={handleResetForm}
         />
                 
@@ -370,4 +367,3 @@
     );
   }
 
-  export default PostoperativeForm;
