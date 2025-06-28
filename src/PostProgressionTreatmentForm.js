@@ -1072,7 +1072,7 @@ export default function PostProgressionTreatmentForm() {
                     const newInt = [...interventions];
                     newInt[index].biopsy = e.target.checked;
                     if (e.target.checked && !newInt[index].markers) {
-                      newInt[index].markers = { ER: '', PgR: '', HER2: '', Ki67: '' };
+                      newInt[index].markers = { ER: '', PgR: '', HER2: '', Ki67: '', sp142: 'none', cps: 'none', msi: 'none', mmr: 'none' };
                     }
                     setInterventions(newInt);
                   }}
@@ -1270,8 +1270,8 @@ export default function PostProgressionTreatmentForm() {
                       className="border px-2 py-1 ml-2"
                     />
                   </div>
-                </div>
-              )}
+                
+              
 
               <div className="space-y-4 mt-4">
                 {/* PD-L1（SP142） */}
@@ -1385,6 +1385,11 @@ export default function PostProgressionTreatmentForm() {
                   </div>
                 </div>
               </div>
+                </div>
+              )}
+
+           
+            
 
               <button
                 type="button"
