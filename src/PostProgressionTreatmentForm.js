@@ -564,7 +564,7 @@ export default function PostProgressionTreatmentForm() {
         patientId={patientId}
         setPatientId={setPatientId}
         onSearch={fetchPatientData}    // ← ここで明示的に fetchPatientData を呼ぶ
-        onReset={resetForm}
+        onReset={handleResetForm}
       />
 
       {/* BasicInfoPanel */}
