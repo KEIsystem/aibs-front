@@ -1,16 +1,12 @@
-// PreoperativeForm.js
 import React, { useState, useEffect } from 'react';
 import BasicInfoPanel from './components/BasicInfoPanel';
 import ERPgRInputPanel from './components/ERPgRInputPanel';
-import PatientIdSearchPanel from './components/PatientIdSearchPanel';
 import { interpretERStatus, interpretPgRStatus } from './utils/interpretMarker';
-import { fetchUnifiedPatientData, sendPreoperativeData } from './api';
-import { saveDoubtCase } from './utils/saveDoubtCase';
-import { loadPatientDataCommon } from './utils/loadPatientData';
-import api from './api';
+import PatientIdSearchPanel from './components/PatientIdSearchPanel';
+import api from "./api";
 
-export default function PreoperativeForm() {
-  // ─── ① フォーム用 state ───────────────────────────────────────────
+function PreoperativeForm() {
+  // 基本情報
   const [patientId, setPatientId] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [age, setAge] = useState('');
@@ -22,7 +18,7 @@ export default function PreoperativeForm() {
   const [gbrca, setGbrca] = useState('未検査');
   const [allergies, setAllergies] = useState('');
 
-  // 乳癌詳細
+  // 詳細情報
   const [side, setSide] = useState('');
   const [regions, setRegions] = useState({ A: false, B: false, C: false, D: false, E: false });
   const [tumorSize, setTumorSize] = useState('');
@@ -39,469 +35,348 @@ export default function PreoperativeForm() {
   const [pgrPS, setPgrPS] = useState('');
   const [pgrIS, setPgrIS] = useState('');
 
-  // その他
-  const [otherInfo, setOtherInfo] = useState({ frailty: null, notes: '' });
+  const [otherInfo, setOtherInfo] = useState({frailty: null, notes: '' });
   const [recommendation, setRecommendation] = useState(null);
 
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
-  const [formData, setFormData] = useState(null);
-  const [doubtComment, setDoubtComment] = useState('');
 
-  // 明示的に「検索」ボタンで呼ぶ想定のデータ取得関数
-  const fetchPatientData = async (id) => {
+  const checkIfPatientExists = async (id) => {
+    const url = `http://localhost:8000/api/patient/${id}/`;
+    console.log("🔍 存在確認URL:", url);  // これを追加
+    const res = await fetch(url);
+    return res.ok;
+  };
+
+  useEffect(() => {
+    console.log("recommendation state updated:", recommendation);
+  }, [recommendation]);
+
+  const handlePatientDataLoad = async (data) => {
     try {
-      const res = await api.get(`/api/patient/${id}/`);
-      // 患者データが見つかったので「更新モード」に移行
-      handlePatientDataLoad(res.data);
-      setDataLoaded(true);
+      console.log("受信データ（API /api/patient/:id から）:", data);
+  
       setIsUpdateMode(true);
-    } catch (err) {
-      console.warn('患者データが見つかりませんでした:', err);
-      // 404 などで見つからなかったら「新規登録モード」のまま（isUpdateMode=false）
-      setIsUpdateMode(false);
-      // （必要ならここで「新規登録扱いになります」などのアラートを出してもOK）
-    }
-  };
-
-  const handleResetForm = () => {
-    // 患者ID を空にすれば isUpdateMode も false になり
-    // 新規登録モードに戻ります。必要なら各フィールドもクリアしてください。
-    setPatientId('');
-    setIsUpdateMode(false);
-    // もしフォーム入力値もリセットしたい場合は、他の state もクリアします
-    setBirthDate('');
-    setAge('');
-    setGender('');
-    setIsPremenopausal(false);
-    setPastMedicalHistory('');
-    setMedications('');
-    setFamilyHistory([]);
-    setGbrca('未検査');
-    setAllergies('');
-    setSide('');
-    setRegions({ A: false, B: false, C: false, D: false, E: false });
-    setTumorSize('');
-    setLymphEvaluation('');
-    setHistology('');
-    setIsInvasive(false);
-    setGrade('');
-    setMarkers({ ER: '', PgR: '', HER2: '', Ki67: '' });
-    setUseAllred(false);
-    setErPercent('');
-    setPgrPercent('');
-    setErPS('');
-    setErIS('');
-    setPgrPS('');
-    setPgrIS('');
-    setOtherInfo({ frailty: null, notes: '' });
-    setRecommendation(null);
-    setDoubtComment('');
-    setFormData(null);
-  };
-
-  // ─── ③ 既存データを各 useState にセット ─────────────────────────────
-  const handlePatientDataLoad = (data) => {
-    try {
-      console.log('受信データ:', data);
-
-      // ── Basic Info をセット ──
+  
       const basic = data.basic_info || {};
-      setBirthDate(basic.birth_date || '');
       setAge(basic.age?.toString() || '');
       setGender(basic.gender || '');
+      setBirthDate(basic.birth_date || '');
       setIsPremenopausal(basic.is_premenopausal || false);
       setPastMedicalHistory(basic.past_treatment || '');
       setMedications(basic.medications || '');
       setAllergies(basic.allergies || '');
-      setFamilyHistory(basic.family_history_list || []);
-      setGbrca(basic.other_info?.gBRCA || '');
-
-      // ── Primary Tumor Info をセット ──
-      const primary = data.primary_tumor_info || {};
-      setSide(primary.side || '');
-      setRegions(primary.regions || { A: false, B: false, C: false, D: false, E: false });
-      setTumorSize(primary.tumor_size?.toString() || '');
-      setLymphEvaluation(primary.lymph_evaluation || '');
-      setHistology(primary.histology || '');
-      setIsInvasive(primary.is_invasive || false);
-      setGrade(primary.grade || '');
-      setMarkers({
-        ER: primary.markers?.ER || '',
-        PgR: primary.markers?.PgR || '',
-        HER2: primary.markers?.HER2 || '',
-        Ki67: primary.markers?.Ki67?.toString() || '',
-      });
-      setUseAllred(primary.use_allred || false);
-      setErPercent(primary.er_percent?.toString() || '');
-      setPgrPercent(primary.pgr_percent?.toString() || '');
-      setErPS(primary.er_ps || '');
-      setErIS(primary.er_is || '');
-      setPgrPS(primary.pgr_ps || '');
-      setPgrIS(primary.pgr_is || '');
-
-      // ── Other Info をセット ──
-      const other = basic.other_info || {};
+      setGbrca(basic.other_info?.gBRCA || '未検査');
+  
+      const fh = basic.family_history || {};
+      const selected = [];
+      if (fh.breast) selected.push("乳がん");
+      if (fh.ovary) selected.push("卵巣がん");
+      if (fh.peritoneum) selected.push("腹膜がん");
+      if (fh.pancreas) selected.push("膵臓がん");
+      if (fh.others) selected.push("その他");
+      setFamilyHistory(selected);
+  
+      // その他情報
       setOtherInfo({
-        frailty: other.frailty ?? null,
-        notes: other.notes || '',
+        frailty: basic.other_info?.frailty ?? null,
+        notes: basic.other_info?.notes || '',
       });
-
-    } catch (err) {
-      console.error('データ読込エラー:', err);
-      alert('データ取得に失敗しました');
+  
+      const details = data.primary || {};
+      setSide(details.side || '');
+      setRegions(details.regions || { A: false, B: false, C: false, D: false, E: false });
+      setTumorSize(details.tumor_size?.toString() || '');
+      setLymphEvaluation(details.lymph_evaluation || '');
+      setHistology(details.histology || '');
+      setIsInvasive(details.is_invasive || false);
+      setGrade(details.grade || '');
+  
+      const mk = details.markers || {};
+      setMarkers({
+        ER: mk.ER || '',
+        PgR: mk.PgR || '',
+        HER2: mk.HER2 || '',
+        Ki67: mk.Ki67?.toString() || '',
+      });
+  
+      setUseAllred(false); // デフォルト false
+      if (
+        'er_percent' in mk || 'pgr_percent' in mk ||
+        'er_ps' in mk || 'er_is' in mk || 'pgr_ps' in mk || 'pgr_is' in mk
+      ) {
+        setUseAllred(true);
+        setErPercent(mk.er_percent?.toString() || '');
+        setPgrPercent(mk.pgr_percent?.toString() || '');
+        setErPS(mk.er_ps?.toString() || '');
+        setErIS(mk.er_is?.toString() || '');
+        setPgrPS(mk.pgr_ps?.toString() || '');
+        setPgrIS(mk.pgr_is?.toString() || '');
+      }
+  
+    } catch (error) {
+      console.error("データ読み込み中にエラー発生:", error);
+      alert("データ取得に失敗しました");
     }
   };
+  
 
-  // ─── ④ radio/checkbox のハンドラ ───────────────────────────────────
+const fetchPatientData = async (id) => {
+  try {
+    const res = await fetch(`http://localhost:8000/api/patient/${id}/`);
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("非JSONレスポンス:", text);
+      alert(`患者データの取得に失敗しました (HTTP ${res.status})`);
+      return;
+    }
+    const json = await res.json();
+    handlePatientDataLoad(json);
+  } catch (err) {
+    console.error("通信エラー:", err);
+    alert("通信エラーが発生しました");
+  }
+};
+  
+
   const handleRegionChange = (e) => {
     const { name, checked } = e.target;
-    setRegions((prev) => ({ ...prev, [name]: checked }));
+    setRegions({ ...regions, [name]: checked });
   };
 
-  // ─── ⑤ フォーム送信（Submit） ─────────────────────────────────────
+  const HER2_value = (() => {
+    if (markers.HER2 === "0" || markers.HER2 === "1+" || markers.HER2 === "2+ (ISH陰性)") return "陰性";
+    if (markers.HER2 === "2+ (ISH陽性)" || markers.HER2 === "3+") return "陽性";
+    return "";
+  })();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // ER/PgR の解釈
+  
     const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
     const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
-
-    // フロントの state から最終 payload を組み立て
-    const payload = {
-      patient_id: patientId,
-      basic_info: {
-        age: parseInt(age || '0', 10),
-        birth_date: birthDate,
-        gender,
-        is_premenopausal: isPremenopausal,
-        past_treatment: pastMedicalHistory,
-        medications,
-        allergies,
-        family_history: {
-          // 例：API 側ではキー名がこうなっている想定
-          breast: familyHistory.includes('breast'),
-          ovary: familyHistory.includes('ovary'),
-          peritoneum: familyHistory.includes('peritoneum'),
-          pancreas: familyHistory.includes('pancreas'),
-          others: familyHistory.includes('others'),
-        },
-        other_info: {
-          gBRCA: gbrca,
-          frailty: otherInfo.frailty,
-          notes: otherInfo.notes || '',
-        },
-      },
-      primary_tumor_info: {
-        side,
-        regions,
-        tumor_size: parseFloat(tumorSize || '0'),
-        lymph_evaluation: lymphEvaluation,
-        histology,
-        is_invasive: isInvasive,
-        grade,
-        markers: {
-          ER,
-          PgR,
-          HER2: markers.HER2,
-          Ki67: parseInt(markers.Ki67 || '0', 10),
-        },
-      },
+  
+    const interpretedMarkers = {
+      ER,
+      PgR,
+      HER2: HER2_value,
+      Ki67: parseInt(markers.Ki67 || '0', 10),
     };
+  
+    const hasDisease = (target) => familyHistory.includes(target);
 
-    // フォームデータを保存しておく（疑問症例として保存するときに参照するため）
-    setFormData(payload);
-
+    const payload = {
+      ER: interpretedMarkers.ER,
+      PgR: interpretedMarkers.PgR,
+      HER2: markers.HER2 || null,
+      tumor_size_mm: parseFloat(tumorSize || '0'),
+      clinical_N: lymphEvaluation || null,
+      age: parseInt(age || '0', 10),
+      frail: otherInfo.frailty,
+      radiation_history: pastMedicalHistory.includes("放射線"),
+      gbrca_positive: gbrca === "陽性",
+      gender: gender || null,
+      family_history: {
+        breast: hasDisease("乳がん"),   //  関数を使ってチェック
+        ovary: hasDisease("卵巣がん"),
+        peritoneum: hasDisease("腹膜がん"),
+        pancreas: hasDisease("膵臓がん"),
+        others: hasDisease("その他")
+      },
+      multifocal: Object.values(regions).filter(v => v).length > 1,
+    };
+  
+    console.log("送信payload", payload);
+    
     try {
-      let result;
-      if (isUpdateMode) {
-        // 更新モード：PUT /api/preoperative/<patientId>/
-        result = await updatePreoperative(patientId, payload);
-      } else {
-        // 新規登録モード：POST /api/preoperative/
-        result = await createPreoperative(payload);
-        // （もしバックエンドから返ってくる新しい patient_id を使いたいならここで setPatientId(result.patient_id) してもOK）
-        setIsUpdateMode(true);  // 以降は更新モードに
+      const res = await api.post("/api/patient/recommendation/preoperative/", payload);
+      const json = res.data;
+  
+      if (json["サブタイプ"] || json["推奨"]) {
+        setRecommendation(json); // ← json そのものを recommendation にする
+      } else if (json.error) {
+        alert(`エラー：${json.error}`);
       }
-
-      console.log('サーバー応答:', result);
-      setRecommendation(result);
-      setFormData(payload);
-      setDataLoaded(true);
     } catch (error) {
-      console.error(error);
-      alert('通信エラー：' + error.message);
+      alert("通信エラー：" + error.message);
     }
   };
+  
+  
 
-  // ─── ⑥ JSX 部分 ──────────────────────────────────────────────────────
   return (
     <>
-      {/* 患者検索パネル。onSearch で patientId をセットすると useEffect が動く */}
       <PatientIdSearchPanel
         patientId={patientId}
         setPatientId={setPatientId}
         onSearch={fetchPatientData}
-        onReset={handleResetForm}
       />
 
-      <form className="p-4" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-bold mb-4">術前情報入力</h2>
+    <form className="p-4" onSubmit={handleSubmit} action="#">
+      <h2 className="text-2xl font-bold mb-4">術前情報入力</h2>
 
-        {/* ── BasicInfoPanel ── */}
-        <BasicInfoPanel
-          birthDate={birthDate} setBirthDate={setBirthDate}
-          age={age} setAge={setAge}
-          gender={gender} setGender={setGender}
-          isPremenopausal={isPremenopausal} setIsPremenopausal={setIsPremenopausal}
-          pastMedicalHistory={pastMedicalHistory} setPastMedicalHistory={setPastMedicalHistory}
-          medications={medications} setMedications={setMedications}
-          allergies={allergies} setAllergies={setAllergies}
-          familyHistory={familyHistory} setFamilyHistory={setFamilyHistory}
-          gbrca={gbrca} setGbrca={setGbrca}
-        />
+      <BasicInfoPanel
+        birthDate={birthDate} setBirthDate={setBirthDate}
+        age={age} setAge={setAge}
+        gender={gender} setGender={setGender}
+        isPremenopausal={isPremenopausal} setIsPremenopausal={setIsPremenopausal}
+        pastMedicalHistory={pastMedicalHistory} setPastMedicalHistory={setPastMedicalHistory}
+        medications={medications} setMedications={setMedications}
+        allergies={allergies} setAllergies={setAllergies}
+        familyHistory={familyHistory} setFamilyHistory={setFamilyHistory}
+        gbrca={gbrca} setGbrca={setGbrca}
+      />
 
-        {/* ── 乳癌の詳細 ── */}
-        <fieldset className="mb-6">
-          <legend className="font-semibold">乳癌の詳細</legend>
-
-          <div className="mb-2">
-            <label>側（Side）：
-              <label className="ml-2">
-                <input
-                  type="radio"
-                  name="side"
-                  value="右"
-                  checked={side === '右'}
-                  onChange={(e) => setSide(e.target.value)}
-                /> 右
+      {/* 乳癌の詳細 */}
+      <fieldset className="mb-6">
+        <legend className="font-semibold">乳癌の詳細</legend>
+        <div>
+          <label>領域:
+            <label><input type="radio" name="side" value="右" checked={side === '右'} onChange={(e) => setSide(e.target.value)} /> 右</label>
+            <label><input type="radio" name="side" value="左" checked={side === '左'} onChange={(e) => setSide(e.target.value)} /> 左</label>
+          </label>
+        </div>
+        <div>
+          <label>区域:
+            {['A', 'B', 'C', 'D', 'E'].map((zone) => (
+              <label key={zone}>
+                <input type="checkbox" name={zone} checked={regions[zone]} onChange={handleRegionChange} /> {zone}
               </label>
-              <label className="ml-2">
-                <input
-                  type="radio"
-                  name="side"
-                  value="左"
-                  checked={side === '左'}
-                  onChange={(e) => setSide(e.target.value)}
-                /> 左
+            ))}
+          </label>
+        </div>
+        <div>
+          <label>腫瘍径： <input type="number" value={tumorSize} onChange={(e) => setTumorSize(e.target.value)} /> mm</label>
+        </div>
+        <div>
+          <label>リンパ節評価:
+            {['cN0', 'cN1', 'cN2', 'cN3'].map((n) => (
+              <label key={n}>
+                <input type="radio" name="lymph" value={n} checked={lymphEvaluation === n} onChange={(e) => setLymphEvaluation(e.target.value)} /> {n}
               </label>
-            </label>
-          </div>
-
-          <div className="mb-2">
-            <label>区域（Regions）：
-              {['A', 'B', 'C', 'D', 'E'].map((zone) => (
-                <label key={zone} className="ml-2">
-                  <input
-                    type="checkbox"
-                    name={zone}
-                    checked={regions[zone]}
-                    onChange={handleRegionChange}
-                  /> {zone}
-                </label>
-              ))}
-            </label>
-          </div>
-
-          <div className="mb-2">
-            <label>腫瘍径（mm）：
-              <input
-                type="number"
-                value={tumorSize}
-                onChange={(e) => setTumorSize(e.target.value)}
-                className="ml-2 border p-1"
-              /> mm
-            </label>
-          </div>
-
-          <div className="mb-2">
-            <label>リンパ節評価（cN）：
-              {['cN0', 'cN1', 'cN2', 'cN3'].map((n) => (
-                <label key={n} className="ml-2">
-                  <input
-                    type="radio"
-                    name="lymph"
-                    value={n}
-                    checked={lymphEvaluation === n}
-                    onChange={(e) => setLymphEvaluation(e.target.value)}
-                  /> {n}
-                </label>
-              ))}
-            </label>
-          </div>
-
-          <div className="mb-2">
-            <label>組織型（Histology）：
-              <input
-                type="text"
-                value={histology}
-                onChange={(e) => setHistology(e.target.value)}
-                className="ml-2 border p-1"
-              />
-            </label>
-          </div>
-
-          <div className="mb-2">
-            <label>
-              <input
-                type="checkbox"
-                checked={isInvasive}
-                onChange={(e) => setIsInvasive(e.target.checked)}
-              /> 浸潤がんの場合チェック
-            </label>
-          </div>
-
-          {isInvasive && (
-            <>
-              <div className="mb-2">
-                <label>組織Grade：
-                  <select
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className="ml-2 border p-1"
-                  >
-                    <option value="">選択してください</option>
-                    <option value="Grade 1">Grade 1</option>
-                    <option value="Grade 2">Grade 2</option>
-                    <option value="Grade 3">Grade 3</option>
-                  </select>
-                </label>
-              </div>
-
-              <ERPgRInputPanel
-                useAllred={useAllred} setUseAllred={setUseAllred}
-                erPercent={erPercent} setErPercent={setErPercent}
-                pgrPercent={pgrPercent} setPgrPercent={setPgrPercent}
-                erPS={erPS} setErPS={setErPS}
-                erIS={erIS} setErIS={setErIS}
-                pgrPS={pgrPS} setPgrPS={setPgrPS}
-                pgrIS={pgrIS} setPgrIS={setPgrIS}
-              />
-
-              <div className="mb-2">
-                <label>マーカー（HER2）：
-                  <select
-                    value={markers.HER2}
-                    onChange={(e) => setMarkers({ ...markers, HER2: e.target.value })}
-                    className="ml-2 border p-1"
-                  >
-                    <option value="">選択してください</option>
-                    <option value="0">0</option>
-                    <option value="1+">1+</option>
-                    <option value="2+ (ISH陰性)">2+（ISH陰性）</option>
-                    <option value="2+ (ISH陽性)">2+（ISH陽性）</option>
-                    <option value="3+">3+</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="mb-2">
-                <label>マーカー（Ki-67）：
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={markers.Ki67}
-                    onChange={(e) => setMarkers({ ...markers, Ki67: e.target.value })}
-                    className="ml-2 border p-1"
-                  /> %
-                </label>
-              </div>
-            </>
-          )}
-        </fieldset>
-
-        {/* ── その他 ── */}
-        <fieldset className="mb-6">
-          <legend className="font-semibold">その他</legend>
-          <div className="mb-2">
-            <label>フレイル状態：
-              <label className="ml-2">
-                <input
-                  type="radio"
-                  name="frailty"
-                  value="true"
-                  checked={otherInfo.frailty === true}
-                  onChange={() => setOtherInfo({ ...otherInfo, frailty: true })}
-                /> はい
+            ))}
+          </label>
+        </div>
+        <div>
+          <label>組織型:
+            <input type="text" value={histology} onChange={(e) => setHistology(e.target.value)} />
+          </label>
+        </div>
+        <div>
+          <label>浸潤がんの場合:
+            <input type="checkbox" checked={isInvasive} onChange={(e) => setIsInvasive(e.target.checked)} />
+          </label>
+        </div>
+        {isInvasive && (
+          <>
+            <div>
+              <label>組織Grade:
+                <select value={grade} onChange={(e) => setGrade(e.target.value)}>
+                  <option value="">選択してください</option>
+                  <option value="Grade 1">Grade 1</option>
+                  <option value="Grade 2">Grade 2</option>
+                  <option value="Grade 3">Grade 3</option>
+                </select>
               </label>
-              <label className="ml-2">
-                <input
-                  type="radio"
-                  name="frailty"
-                  value="false"
-                  checked={otherInfo.frailty === false}
-                  onChange={() => setOtherInfo({ ...otherInfo, frailty: false })}
-                /> いいえ
-              </label>
-            </label>
-          </div>
-
-          <div className="mb-2">
-            <label>その他（自由記載）：
-              <textarea
-                value={otherInfo.notes}
-                onChange={(e) => setOtherInfo({ ...otherInfo, notes: e.target.value })}
-                className="ml-2 border p-1 w-full"
-                rows={3}
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          送信
-        </button>
-
-        {/* ── 推奨治療結果を受け取って表示 ── */}
-        {recommendation && (
-          <div className="mt-6 border border-gray-300 p-4">
-            <h4 className="text-lg font-semibold mb-2">推奨治療結果</h4>
-            {/* 以下はバックエンドが返すキーに合わせて適宜変更してください */}
-            <p><strong>サブタイプ：</strong>{recommendation["サブタイプ"]}</p>
-            <p><strong>推奨：</strong>{recommendation["推奨"]}</p>
-            <p><strong>根拠：</strong>{recommendation["根拠"]}</p>
-            {recommendation["PMID"] && (
-              <p>
-                <strong>参考文献：</strong>PMID: {recommendation["PMID"].join(" / ")}
-              </p>
-            )}
-            {recommendation["アラート"] && (
-              <div className="text-red-600">
-                <strong>アラート：</strong>
-                <ul className="list-disc list-inside">
-                  {recommendation["アラート"].map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {/* 疑問症例保存欄 */}
-            <div className="mt-4">
-              <label htmlFor="doubt-comment">💬 疑問に思った点を自由に記載：</label><br />
-              <textarea
-                id="doubt-comment"
-                rows={4}
-                cols={60}
-                value={doubtComment}
-                onChange={(e) => setDoubtComment(e.target.value)}
-                placeholder="例：この症例でNACが推奨されない理由が不明です…"
-                className="mt-2 p-2 border rounded w-full"
-              />
-              <br />
-              <button
-                onClick={() => saveDoubtCase("preoperative", formData, recommendation, doubtComment)}
-                className="mt-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded"
-              >
-                この症例を疑問症例として保存する
-              </button>
             </div>
-          </div>
+
+            <ERPgRInputPanel
+              useAllred={useAllred} setUseAllred={setUseAllred}
+              erPercent={erPercent} setErPercent={setErPercent}
+              pgrPercent={pgrPercent} setPgrPercent={setPgrPercent}
+              erPS={erPS} setErPS={setErPS}
+              erIS={erIS} setErIS={setErIS}
+              pgrPS={pgrPS} setPgrPS={setPgrPS}
+              pgrIS={pgrIS} setPgrIS={setPgrIS}
+            />
+            <div>
+              <label>マーカー（HER2）:
+                <select value={markers.HER2} onChange={(e) => setMarkers({ ...markers, HER2: e.target.value })}>
+                  <option value="">選択してください</option>
+                  <option value="0">0</option>
+                  <option value="1+">1+</option>
+                  <option value="2+ (ISH陰性)">2+（ISH陰性）</option>
+                  <option value="2+ (ISH陽性)">2+（ISH陽性）</option>
+                  <option value="3+">3+</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <label>マーカー（Ki-67）:
+                <input type="number" min="0" max="100" value={markers.Ki67} onChange={(e) => setMarkers({ ...markers, Ki67: e.target.value })} /> %
+              </label>
+            </div>
+          </>
         )}
-      </form>
-    </>
-  );
+      </fieldset>
+
+      {/* その他 */}
+      <fieldset className="mb-6">
+        <legend className="font-semibold">その他</legend>
+        <div>
+         
+        </div>
+        <div>
+          <label>フレイル状態:
+            <label><input type="radio" name="frailty" value="true" checked={otherInfo.frailty === true} onChange={() => setOtherInfo({ ...otherInfo, frailty: true })} /> はい</label>
+            <label><input type="radio" name="frailty" value="false" checked={otherInfo.frailty === false} onChange={() => setOtherInfo({ ...otherInfo, frailty: false })} /> いいえ</label>
+          </label>
+        </div>
+        <div>
+          <label>その他（自由記載）:
+            <textarea value={otherInfo.notes} onChange={(e) => setOtherInfo({ ...otherInfo, notes: e.target.value })} />
+          </label>
+        </div>
+      </fieldset>
+
+      <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+        送信
+      </button>
+
+       {/* 推奨治療結果の表示 */}
+       {recommendation && typeof recommendation === 'object' && (
+  <div className="mt-6 border border-gray-300 p-4 rounded-md shadow">
+    <h4 className="text-lg font-semibold mb-2">推奨治療結果</h4>
+
+    {recommendation["サブタイプ"] && (
+      <p><strong>サブタイプ：</strong>{recommendation["サブタイプ"]}</p>
+    )}
+    
+    {recommendation["推奨"] && (
+      <p><strong>推奨：</strong>{recommendation["推奨"]}</p>
+    )}
+    
+    {recommendation["根拠"] && (
+      <p><strong>根拠：</strong>{recommendation["根拠"]}</p>
+    )}
+
+    {recommendation["PMID"] && (
+      <p><strong>参考文献：</strong>PMID: {recommendation["PMID"]}</p>
+    )}
+
+    {Array.isArray(recommendation["アラート"]) && recommendation["アラート"].length > 0 && (
+      <div className="text-red-600 mt-2">
+        <strong>アラート：</strong>
+        <ul className="list-disc list-inside">
+          {recommendation["アラート"].map((item, idx) => (
+            <li key={idx}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {/* ↓ デバッグ用：JSONで全体表示 */}
+    <details className="mt-4 text-sm">
+      <summary className="cursor-pointer text-blue-600">JSON形式で詳細を見る</summary>
+      <pre className="bg-gray-100 p-2 mt-2 rounded text-gray-800">
+        {JSON.stringify(recommendation, null, 2)}
+      </pre>
+    </details>
+  </div>
+)}
+
+    </form>
+  </>
+);
 }
+
+export default PreoperativeForm;
