@@ -188,9 +188,11 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ER/PgR の解釈
     const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
     const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
 
+    // --- payload をサーバ期待形へ（markers をネスト）---
     const payload = {
       basic_info: {
         patient_id: patientId,
@@ -220,10 +222,13 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         surgery_type: surgeryType,
         axillary_surgery: axillarySurgery,
         surgery_date: surgeryDate,
-        ER,
-        PgR,
-        HER2: primaryMarkers.HER2,
-        Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
+        // ★ ここを markers にまとめる（重要）
+        markers: {
+          ER,
+          PgR,
+          HER2: primaryMarkers.HER2,
+          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
+        },
         PD_L1: primaryPdL1,
         tumor_size: parseFloat(tumorSize || '0'),
         chest_wall: invasionChestWall,
@@ -239,18 +244,23 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
     };
 
     try {
+      // 既存/新規の分岐はどちらでもOK（sendPostoperativeData を使ってもよい）
       let result;
       if (isUpdateMode && patientId) {
-        // 更新モード：PUT /api/postoperative/<patientId>/
         result = await updatePostoperative(patientId, payload);
       } else {
-        // 新規登録モード：POST /api/postoperative/
         result = await createPostoperative(payload);
-        // （必要なら result.patient_id を受け取って setPatientId しても OK）
-        setIsUpdateMode(true);  // 新規登録したら次からは更新モードにする
+        setIsUpdateMode(true);
+        // サーバが新 patient_id を返す場合の反映（任意）
+        if (result?.patient_id && !patientId) setPatientId(result.patient_id);
       }
+
       console.log('サーバー応答:', result);
-      setRecommendation(result);
+
+      // ★ ネスト対応：recommendation があればそれを採用
+      const rec = result?.recommendation ?? result;
+      setRecommendation(rec);
+
       setFormData(payload);
       setDataLoaded(true);
     } catch (error) {

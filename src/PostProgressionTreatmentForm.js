@@ -444,6 +444,7 @@ export default function PostProgressionTreatmentForm() {
         surgery_type: surgeryType,
         axillary_surgery: axillarySurgery,
         surgery_date: formatDateForBackend(surgeryDate),
+        // markers はネストで送る（重要）
         markers: {
           ER: primaryMarkers.ER,
           PgR: primaryMarkers.PgR,
@@ -544,17 +545,27 @@ export default function PostProgressionTreatmentForm() {
       } else {
         // 新規登録モード：POST /api/metastatic/submit
         result = await createMetastatic(payload);
-        // 新規登録後は更新モードに切り替えておく
+        // 新規登録後は更新モードに切り替え
         setIsUpdateMode(true);
+        // サーバが新しい patient_id を返すなら反映（任意）
+        if (result?.patient_id && !patientId) {
+          setPatientId(result.patient_id);
+        }
       }
+
       console.log("サーバー応答:", result);
-      setRecommendation(result);
+
+      // ★ ネスト対応：recommendation があればそれを採用
+      const rec = result?.recommendation ?? result;
+      setRecommendation(rec);
+
       setDataLoaded(true);
     } catch (error) {
       console.error("送信エラー:", error);
       alert("通信エラー：" + error.message);
     }
   };
+
 
   return (
     <div className="p-4 space-y-6">
