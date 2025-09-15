@@ -4,7 +4,6 @@ import api from './api'
 import {
   createPostoperative,
   updatePostoperative,
-  fetchPatientData,
   fetchUnifiedPatientData, sendPostoperativeData   // ← 追加必須！
 } from './api';
 import BasicInfoPanel from './components/BasicInfoPanel';
@@ -188,11 +187,12 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ER/PgR の解釈
+  
+    // 1) ER/PgR の解釈（Allred/％どちらでも）
     const ER = interpretERStatus({ useAllred, erPercent, erPS, erIS });
     const PgR = interpretPgRStatus({ useAllred, pgrPercent, pgrPS, pgrIS });
 
-    // --- payload をサーバ期待形へ（markers をネスト）---
+    // 2) payload（markers は必ずここでネスト & 解釈値を使う）
     const payload = {
       basic_info: {
         patient_id: patientId,
@@ -202,6 +202,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         is_premenopausal: isPremenopausal,
         past_treatment: pastMedicalHistory,
         medications,
+        allergies,
         family_history: {
           breast: familyHistory.some((f) => f.disease === '乳がん'),
           ovary: familyHistory.some((f) => f.disease === '卵巣がん'),
@@ -222,12 +223,12 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         surgery_type: surgeryType,
         axillary_surgery: axillarySurgery,
         surgery_date: surgeryDate,
-        // ★ ここを markers にまとめる（重要）
+        // ★ここが最重要：interpret 後の値を markers に入れる
         markers: {
-          ER,
-          PgR,
-          HER2: primaryMarkers.HER2,
-          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10),
+          ER: erStatus,                    // ← 文字列 '陽性' / '陰性' 等（関数の返り値）
+          PgR: pgrStatus,                   // ← 同上
+          HER2: primaryMarkers.HER2 || '',               // '0' | '1+' | '2+ (ISH陰性)' | '2+ (ISH陽性)' | '3+'
+          Ki67: parseInt(primaryMarkers.Ki67 || '0', 10) // 数値化
         },
         PD_L1: primaryPdL1,
         tumor_size: parseFloat(tumorSize || '0'),
@@ -239,28 +240,28 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         margin_status: marginStatus,
         grade,
       },
-      systemic_treatments: [],
-      interventions: [],
     };
 
+    // 送信前デバッグ（画面の Network と突き合わせる用）
+    console.log('DEBUG to-send markers:', payload.primary_tumor_info.markers);
+    console.log('DEBUG to-send basic_info:', payload.basic_info);
+
     try {
-      // 既存/新規の分岐はどちらでもOK（sendPostoperativeData を使ってもよい）
+      // （sendPostoperativeData を使ってもOK）
       let result;
       if (isUpdateMode && patientId) {
         result = await updatePostoperative(patientId, payload);
       } else {
         result = await createPostoperative(payload);
         setIsUpdateMode(true);
-        // サーバが新 patient_id を返す場合の反映（任意）
         if (result?.patient_id && !patientId) setPatientId(result.patient_id);
       }
 
       console.log('サーバー応答:', result);
 
-      // ★ ネスト対応：recommendation があればそれを採用
+      // ネスト対応（{ message, recommendation } or 直接 recommendation）
       const rec = result?.recommendation ?? result;
       setRecommendation(rec);
-
       setFormData(payload);
       setDataLoaded(true);
     } catch (error) {
@@ -278,7 +279,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onSearch={fetchPatientData} 
+          onSearch={handlePatientDataLoad} 
           onReset={handleResetForm}
         />
                 
