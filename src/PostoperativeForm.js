@@ -1,11 +1,7 @@
   // PostoperativeForm.js 完全版
 import React, { useState, useEffect } from 'react';
 import api from './api'
-import {
-  createPostoperative,
-  updatePostoperative,
-  fetchUnifiedPatientData, sendPostoperativeData   // ← 追加必須！
-} from './api';
+import { sendPostoperativeData } from './api';
 import BasicInfoPanel from './components/BasicInfoPanel';
 import PrimaryTumorInfoPanel from './PrimaryTumorInfoPanel';
 import PatientIdSearchPanel from './components/PatientIdSearchPanel';
@@ -98,6 +94,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
 
       // ─── PrimaryTumorInfo を個別セット ────────────
       const primary = data.primary_tumor_info || {};
+      const m = primary.markers || {};
       setReceivedNAC(primary.received_NAC || false);
       setNacRegimen(primary.NAC_regimen || '');
       setNacEndDate(primary.NAC_end_date || '');
@@ -105,10 +102,10 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
       setAxillarySurgery(primary.axillary_surgery || '');
       setSurgeryDate(primary.surgery_date || '');
       setPrimaryMarkers({
-        ER: primary.ER || '',
-        PgR: primary.PgR || '',
-        HER2: primary.HER2 || '',
-        Ki67: primary.Ki67?.toString() || '',
+        ER: m.ER || '',
+        PgR: m.PgR || '',
+        HER2: m.HER2 || '',
+        Ki67: (m.Ki67 ?? '').toString(),
       });
       setPrimaryPdL1(primary.PD_L1 || []);
       setTumorSize(primary.tumor_size?.toString() || '');
@@ -247,18 +244,12 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
 
     // 送信前デバッグ（画面の Network と突き合わせる用）
     console.log('DEBUG to-send markers:', payload.primary_tumor_info.markers);
-    console.log('DEBUG to-send basic_info:', payload.basic_info);
+    console.log('useAllred=', useAllred, 'ER%', erPercent, 'PgR%', pgrPercent);
+    console.log('patientId(top-level to be sent)=', patientId);
 
     try {
       // （sendPostoperativeData を使ってもOK）
-      let result;
-      if (isUpdateMode && patientId) {
-        result = await updatePostoperative(patientId, payload);
-      } else {
-        result = await createPostoperative(payload);
-        setIsUpdateMode(true);
-        if (result?.patient_id && !patientId) setPatientId(result.patient_id);
-      }
+      const result = await sendPostoperativeData(payload, patientId || null);
 
       console.log('サーバー応答:', result);
 
@@ -294,6 +285,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
       isPremenopausal={isPremenopausal} setIsPremenopausal={setIsPremenopausal}
       pastMedicalHistory={pastMedicalHistory} setPastMedicalHistory={setPastMedicalHistory}
       medications={medications} setMedications={setMedications}
+      allergies={allergies} setAllergies={setAllergies}
       familyHistory={familyHistory} setFamilyHistory={setFamilyHistory}
       gbrca={gbrca} setGbrca={setGbrca}
       />
