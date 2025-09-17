@@ -23,6 +23,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
   const [gender, setGender] = useState('');
   const [pastMedicalHistory, setPastMedicalHistory] = useState('');
   const [medications, setMedications] = useState('');
+  const [allergies, setAllergies] = useState('')
   const [familyHistory, setFamilyHistory] = useState([]);
   const [gbrca, setGbrca] = useState('');
   const [isPremenopausal, setIsPremenopausal] = useState(false);
@@ -91,6 +92,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
       setIsPremenopausal(basic.is_premenopausal || false);
       setPastMedicalHistory(basic.past_treatment || '');
       setMedications(basic.medications || '');
+      setAllergies(basic.allergies || '');
       setFamilyHistory(basic.family_history_list || []); // 形に合わせる
       setGbrca(basic.other_info?.gBRCA || '');
 
@@ -146,6 +148,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
     setIsPremenopausal(false);
     setPastMedicalHistory('');
     setMedications('');
+    setAllergies('');
     setFamilyHistory([]);
     setGbrca('');
 
@@ -225,8 +228,8 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         surgery_date: surgeryDate,
         // ★ここが最重要：interpret 後の値を markers に入れる
         markers: {
-          ER: erStatus,                    // ← 文字列 '陽性' / '陰性' 等（関数の返り値）
-          PgR: pgrStatus,                   // ← 同上
+          ER,                    // ← 文字列 '陽性' / '陰性' 等（関数の返り値）
+          PgR,                   // ← 同上
           HER2: primaryMarkers.HER2 || '',               // '0' | '1+' | '2+ (ISH陰性)' | '2+ (ISH陽性)' | '3+'
           Ki67: parseInt(primaryMarkers.Ki67 || '0', 10) // 数値化
         },
@@ -279,7 +282,7 @@ export default function PostoperativeForm({ patientId: initialPatientId }) {
         <PatientIdSearchPanel
           patientId={patientId}
           setPatientId={setPatientId}
-          onSearch={handlePatientDataLoad} 
+          onSearch={fetchPatientData}
           onReset={handleResetForm}
         />
                 
