@@ -17,7 +17,7 @@ import { loadPatientDataCommon } from './utils/loadPatientData';
 
 const drugCategories = {
   //  ホルモン療法（単剤）
-  "Endocrine (Monotherapy)": [
+  "Endocrine": [
     "TAM",          // Tamoxifen
     "TOR",          // Toremifene
     "LET",          // Letrozole
