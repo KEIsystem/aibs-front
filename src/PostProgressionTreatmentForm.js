@@ -16,6 +16,27 @@ import { saveDoubtCase } from './utils/saveDoubtCase';
 import { loadPatientDataCommon } from './utils/loadPatientData';
 
 const drugCategories = {
+  //  ホルモン療法（単剤）
+  "Endocrine (Monotherapy)": [
+    "TAM",          // Tamoxifen
+    "TOR",          // Toremifene
+    "LET",          // Letrozole
+    "ANA",          // Anastrozole
+    "EXE",          // Exemestane
+    "Ful",          // Fulvestrant
+    "LHRHa"         // LH-RH アゴニスト（Leupro/Goserelin 等）
+  ],
+  //  CDK4/6阻害薬
+  "CDK4/6 Inhibitors": [
+    "Abemaciclib",
+    "Palbociclib"
+  ],
+  //  内分泌関連の分子標的薬
+  "Endocrine-Targeted Adjuncts": [
+    "EVE",          // Everolimus（EXEとの併用前提）
+    "Capivasertib"  // AKT阻害薬（通常はFulと併用）
+  ],
+
   // 例：アントラサイクリン系
   "Anthracyclines": [
     "Doxorubicin",
@@ -42,14 +63,9 @@ const drugCategories = {
   // 例：その他の抗体薬物複合体（ADC）等
   "Other ADCs": [
     "Dato-DXd",        // Datopotamab deruxtecan
-    "SG",          // Sacituzumab govitecan
-    // …必要に応じて追加…
+    "SG"               // Sacituzumab govitecan
   ],
-  // 例：タキサン後の新規標的薬
-  "Other Targeted": [
-    "SG",   // Sacituzumab govitecan
-    // …必要に応じて追加…
-  ],
+ 
   // 例：経口抗がん剤（FU 系など）
   "Oral‐FU Agents": [
     "Capecitabine",
