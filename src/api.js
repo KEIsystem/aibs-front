@@ -184,22 +184,7 @@ function buildMetastaticPayload(data, patientId = null) {
     adjuvant_therapy: data.adjuvant_therapy || {},
     primary_tumor_info: data.primary_tumor_info || {},
   };
-} 
-
-export async function createMetastatic(data, patientId = null) {
-  const payload = buildMetastaticPayload(data, patientId);
-  // 新規は /api/metastatic/submit
-  return safeRequest(api.post('/api/metastatic/submit', payload));
 }
-
-export async function updateMetastatic(patientId, data) {
-  if (!patientId) throw new Error('patient_id is required');
-  const payload = buildMetastaticPayload(data, patientId);
-  // 更新は /api/metastatic/<id>/submit
-  return safeRequest(api.put(`/api/metastatic/${encodeURIComponent(patientId)}/submit`, payload));
-}
-
-
 
 export async function createMetastatic(data, patientId = null) {
   const payload = buildMetastaticPayload(data, patientId);
@@ -221,7 +206,6 @@ export async function sendPostProgressionData(data, isUpdateMode = false, patien
     : createMetastatic(data, data.patient_id || null);
 }
 
-
 export async function fetchPatientData(patientId) {
   if (!patientId) throw new Error('patientId is required');
   return safeRequest(api.get(`/api/patient/${encodeURIComponent(patientId)}/`));
@@ -231,6 +215,5 @@ export async function fetchUnifiedPatientData(patientId) {
   if (!patientId) throw new Error('patientId is required');
   return safeRequest(api.get(`/api/unified/${encodeURIComponent(patientId)}/`));
 }
-
 
 export default api;
