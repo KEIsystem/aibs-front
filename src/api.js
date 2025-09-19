@@ -134,7 +134,10 @@ export async function sendPostoperativeData(data, patientId = null) {
 }
 
 // =================== 転移・再発フォーム（metastatic） ===================
-// 術後と同様、基本情報はトップレベル、病勢情報は metastasis_info に入れて送る想定。
+// バックエンドの要求に合わせて：
+// - basic_info: オブジェクト必須
+// - is_de_novo / visceral_crisis / is_deceased: トップレベル boolean 必須
+// そのほか（recurrence / systemic_treatments / interventions / local_therapy / adjuvant_therapy など）も同梱
 function buildMetastaticPayload(data, patientId = null) {
   const b = data.basic_info || {};
   const other = b.other_info || {};
@@ -148,21 +151,55 @@ function buildMetastaticPayload(data, patientId = null) {
     others: !!fam.others || (Array.isArray(fam) && fam.includes('others')),
   };
 
-  return {
+  const basic_info = {
     patient_id: patientId ?? (data.patient_id ?? ''),
     age: b.age ?? null,
     birth_date: b.birth_date ?? '',
     gender: b.gender ?? '',
     is_premenopausal: !!b.is_premenopausal,
-    gbrca: other.gBRCA ?? '未検査',
-    frailty: other.frailty ?? false,
-    past_medical_history: b.past_treatment ?? '',
     medications: b.medications ?? '',
+    past_treatment: b.past_treatment ?? '',
+    other_info: {
+      gBRCA: other.gBRCA ?? '未検査',
+      frailty: !!other.frailty,
+    },
     family_history,
-
-    metastasis_info: data.metastasis_info || {},
   };
+
+  return {
+    // ★ 必須 4 項目
+    basic_info,
+    is_de_novo: !!data.is_de_novo,
+    visceral_crisis: !!data.visceral_crisis,
+    is_deceased: !!data.is_deceased,
+
+    // ★ 念のためトップレベルにも patient_id を持たせる（任意）
+    patient_id: basic_info.patient_id,
+
+    // ★ 既存ログに出ていたセクションをそのまま同梱
+    recurrence: data.recurrence || {},
+    systemic_treatments: data.systemic_treatments || [],
+    interventions: data.interventions || [],
+    local_therapy: data.local_therapy || {},
+    adjuvant_therapy: data.adjuvant_therapy || {},
+    primary_tumor_info: data.primary_tumor_info || {},
+  };
+} 
+
+export async function createMetastatic(data, patientId = null) {
+  const payload = buildMetastaticPayload(data, patientId);
+  // 新規は /api/metastatic/submit
+  return safeRequest(api.post('/api/metastatic/submit', payload));
 }
+
+export async function updateMetastatic(patientId, data) {
+  if (!patientId) throw new Error('patient_id is required');
+  const payload = buildMetastaticPayload(data, patientId);
+  // 更新は /api/metastatic/<id>/submit
+  return safeRequest(api.put(`/api/metastatic/${encodeURIComponent(patientId)}/submit`, payload));
+}
+
+
 
 export async function createMetastatic(data, patientId = null) {
   const payload = buildMetastaticPayload(data, patientId);
